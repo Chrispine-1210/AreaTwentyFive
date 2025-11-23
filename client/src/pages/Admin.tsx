@@ -117,12 +117,25 @@ export default function Admin() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = {
+    const productType = formData.get("productType") as string;
+    
+    const data: any = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
-      strainType: formData.get("strainType") as string,
-      pricePerGram: parseInt(formData.get("pricePerGram") as string),
+      productType,
       stockQuantity: parseInt(formData.get("stockQuantity") as string),
+    };
+
+    if (productType === "flower") {
+      data.strainType = formData.get("strainType") as string;
+      data.pricePerGram = parseInt(formData.get("pricePerGram") as string);
+    } else if (productType === "preroll") {
+      data.size = formData.get("size") as string;
+      data.totalPrice = parseInt(formData.get("totalPrice") as string);
+    }
+
+    const submitData = {
+      ...data,
       imageUrl: formData.get("imageUrl") as string,
       isAvailable: true,
     };
