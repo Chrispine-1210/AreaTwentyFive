@@ -44,6 +44,10 @@ export const users = pgTable("users", {
   isAvailableForDelivery: boolean("is_available_for_delivery").default(false),
   totalDeliveries: integer("total_deliveries").default(0),
   averageRating: varchar("average_rating"),
+  // Loyalty program fields
+  loyaltyPoints: integer("loyalty_points").default(0),
+  loyaltyTier: varchar("loyalty_tier", { length: 50 }).default("bronze"), // bronze, silver, gold, platinum
+  phoneNumber: varchar("phone_number"), // For SMS notifications
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -198,5 +202,143 @@ export const deliveryTrackingRelations = relations(deliveryTracking, ({ one }) =
   driver: one(users, {
     fields: [deliveryTracking.driverId],
     references: [users.id],
+  }),
+}));
+
+// Loyalty Program table - track customer points and rewards
+export const loyaltyProgram = pgTable("loyalty_program", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  points: integer("points").default(0).notNull(),
+  totalSpent: integer("total_spent").default(0).notNull(),
+  tier: varchar("tier", { length: 50 }).default("bronze").notNull(), // bronze, silver, gold, platinum
+  lastPointsUpdate: timestamp("last_points_update").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payment Records table - track Stripe transactions
+export const paymentRecords = pgTable("payment_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id").unique(),
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: varchar("currency", { length: 10 }).default("MWK").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, succeeded, failed, cancelled
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Events Calendar table - track events and special occasions
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  eventType: varchar("event_type", { length: 50 }).notNull(), // "sports", "special_event", "promotion"
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  imageUrl: text("image_url"),
+  discount: integer("discount"), // Percentage discount
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Inventory Alerts table - track low-stock warnings
+export const inventoryAlerts = pgTable("inventory_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => products.id, { onDelete: 'cascade' }),
+  minimumThreshold: integer("minimum_threshold").notNull().default(50), // Alert when below this
+  currentStock: integer("current_stock").notNull().default(0),
+  isActive: boolean("is_active").default(true).notNull(),
+  alertSentAt: timestamp("alert_sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notification Log table - track sent notifications
+export const notificationLog = pgTable("notification_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orderId: varchar("order_id").references(() => orders.id, { onDelete: 'cascade' }),
+  type: varchar("type", { length: 50 }).notNull(), // "sms", "email", "push"
+  subject: varchar("subject", { length: 255 }),
+  message: text("message").notNull(),
+  recipient: varchar("recipient", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, sent, failed
+  externalId: varchar("external_id"), // ID from Twilio/SendGrid
+  createdAt: timestamp("created_at").defaultNow(),
+  sentAt: timestamp("sent_at"),
+});
+
+// Analytics Summary table - cache aggregated data for dashboard
+export const analyticsSummary = pgTable("analytics_summary", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD format
+  totalOrders: integer("total_orders").default(0).notNull(),
+  totalRevenue: integer("total_revenue").default(0).notNull(),
+  totalCustomers: integer("total_customers").default(0).notNull(),
+  averageOrderValue: integer("average_order_value").default(0).notNull(),
+  topProduct: varchar("top_product"),
+  topCategory: varchar("top_category"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Update orders table to include payment status
+export const ordersExtended = pgTable("orders_extended", {
+  orderId: varchar("order_id").primaryKey().references(() => orders.id, { onDelete: 'cascade' }),
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending").notNull(), // pending, paid, failed
+  paymentMethod: varchar("payment_method", { length: 50 }),
+  loyaltyPointsEarned: integer("loyalty_points_earned").default(0),
+});
+
+// Relations
+export const loyaltyProgramRelations = relations(loyaltyProgram, ({ one }) => ({
+  user: one(users, {
+    fields: [loyaltyProgram.userId],
+    references: [users.id],
+  }),
+}));
+
+export const paymentRecordsRelations = relations(paymentRecords, ({ one }) => ({
+  order: one(orders, {
+    fields: [paymentRecords.orderId],
+    references: [orders.id],
+  }),
+  user: one(users, {
+    fields: [paymentRecords.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventsRelations = relations(events, ({ many }) => ({
+  products: many(products),
+}));
+
+export const inventoryAlertsRelations = relations(inventoryAlerts, ({ one }) => ({
+  product: one(products, {
+    fields: [inventoryAlerts.productId],
+    references: [products.id],
+  }),
+}));
+
+export const notificationLogRelations = relations(notificationLog, ({ one }) => ({
+  user: one(users, {
+    fields: [notificationLog.userId],
+    references: [users.id],
+  }),
+  order: one(orders, {
+    fields: [notificationLog.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const ordersExtendedRelations = relations(ordersExtended, ({ one }) => ({
+  order: one(orders, {
+    fields: [ordersExtended.orderId],
+    references: [orders.id],
   }),
 }));
