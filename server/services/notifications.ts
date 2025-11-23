@@ -30,8 +30,8 @@ export async function sendSMSNotification(
       return;
     }
 
-    const twilio = await import('twilio');
-    const client = twilio.default(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+    const twilio = require('twilio');
+    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
     const result = await client.messages.create({
       body: message,
@@ -94,8 +94,8 @@ export async function sendEmailNotification(
       return;
     }
 
-    const sgMail = await import('@sendgrid/mail');
-    sgMail.default.setApiKey(SENDGRID_API_KEY);
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(SENDGRID_API_KEY);
 
     const msg = {
       to: email,
@@ -105,7 +105,7 @@ export async function sendEmailNotification(
       html: `<p>${message}</p>`,
     };
 
-    const result = await sgMail.default.send(msg);
+    const result = await sgMail.send(msg);
 
     if (userId) {
       await storage.logNotification({

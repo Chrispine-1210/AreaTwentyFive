@@ -40,6 +40,23 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
                   My Orders
                 </a>
               </Link>
+              <Link href="/loyalty">
+                <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-loyalty">
+                  Loyalty
+                </a>
+              </Link>
+              <Link href="/events">
+                <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-events">
+                  Events
+                </a>
+              </Link>
+              {isAdmin && (
+                <Link href="/analytics">
+                  <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-analytics">
+                    Analytics
+                  </a>
+                </Link>
+              )}
             </>
           )}
         </nav>
