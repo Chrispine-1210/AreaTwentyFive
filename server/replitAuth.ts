@@ -166,8 +166,24 @@ export const isAdmin: RequestHandler = async (req, res, next) => {
   }
 
   const dbUser = await storage.getUser(userId);
-  if (!dbUser?.isAdmin) {
+  if (dbUser?.role !== "admin") {
     return res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+
+  next();
+};
+
+export const isDriver: RequestHandler = async (req, res, next) => {
+  const user = req.user as any;
+  const userId = user?.claims?.sub;
+  
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const dbUser = await storage.getUser(userId);
+  if (dbUser?.role !== "driver") {
+    return res.status(403).json({ message: "Forbidden: Driver access required" });
   }
 
   next();

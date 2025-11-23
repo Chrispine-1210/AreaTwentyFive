@@ -12,6 +12,9 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
-    isAdmin: user?.isAdmin ?? false,
+    isAdmin: user?.role === "admin",
+    isDriver: user?.role === "driver",
+    isCustomer: user?.role === "customer",
+    userRole: user?.role ?? "customer",
   };
 }

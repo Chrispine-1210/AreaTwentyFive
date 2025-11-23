@@ -2,7 +2,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, isDriver } from "./replitAuth";
 import { insertProductSchema, insertCartItemSchema, insertOrderSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -210,6 +210,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all orders:", error);
       res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  // Driver routes
+  app.get("/api/driver/available", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const drivers = await storage.getAvailableDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error("Error fetching drivers:", error);
+      res.status(500).json({ message: "Failed to fetch drivers" });
+    }
+  });
+
+  app.get("/api/driver/stats", isAuthenticated, isDriver, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getDriverStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching driver stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/driver/deliveries", isAuthenticated, isDriver, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const orders = await storage.getDriverOrders(userId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching deliveries:", error);
+      res.status(500).json({ message: "Failed to fetch deliveries" });
+    }
+  });
+
+  app.post("/api/driver/location", isAuthenticated, isDriver, async (req: any, res) => {
+    try {
+      const { latitude, longitude, speed } = req.body;
+      const userId = req.user.claims.sub;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ message: "Latitude and longitude required" });
+      }
+
+      await storage.updateDriverLocation(userId, latitude, longitude);
+      
+      // Track active deliveries
+      const orders = await storage.getDriverOrders(userId);
+      const activeOrder = orders.find(o => o.status === "out_for_delivery");
+      
+      if (activeOrder) {
+        await storage.updateDeliveryTracking(activeOrder.id, userId, latitude, longitude, speed || 0);
+      }
+
+      res.json({ message: "Location updated" });
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).json({ message: "Failed to update location" });
+    }
+  });
+
+  app.post("/api/driver/accept/:orderId", isAuthenticated, isDriver, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const order = await storage.assignOrderToDriver(req.params.orderId, userId);
+      res.json(order);
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      res.status(500).json({ message: "Failed to accept order" });
+    }
+  });
+
+  app.patch("/api/driver/availability", isAuthenticated, isDriver, async (req: any, res) => {
+    try {
+      const { isAvailable } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.setDriverAvailability(userId, isAvailable);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      res.status(500).json({ message: "Failed to update availability" });
+    }
+  });
+
+  app.get("/api/delivery/:orderId/tracking", isAuthenticated, async (req, res) => {
+    try {
+      const tracking = await storage.getDeliveryTracking(req.params.orderId);
+      res.json(tracking);
+    } catch (error) {
+      console.error("Error fetching tracking:", error);
+      res.status(500).json({ message: "Failed to fetch tracking" });
     }
   });
 

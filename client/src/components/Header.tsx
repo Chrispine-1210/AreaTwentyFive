@@ -1,4 +1,4 @@
-import { ShoppingCart, User, LogOut, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, User, LogOut, LayoutDashboard, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -62,23 +62,37 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
                 </Link>
               )}
               
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onCartClick}
-                className="relative"
-                data-testid="button-cart"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <Badge
-                    className="absolute -right-1 -top-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    data-testid="badge-cart-count"
+              {useAuth().isDriver && (
+                <Link href="/driver">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    data-testid="button-driver"
                   >
-                    {cartItemCount}
-                  </Badge>
-                )}
-              </Button>
+                    <Truck className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
+              
+              {useAuth().isCustomer && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onCartClick}
+                  className="relative"
+                  data-testid="button-cart"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemCount > 0 && (
+                    <Badge
+                      className="absolute -right-1 -top-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      data-testid="badge-cart-count"
+                    >
+                      {cartItemCount}
+                    </Badge>
+                  )}
+                </Button>
+              )}
 
               <a href="/api/logout">
                 <Button

@@ -27,14 +27,23 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (MANDATORY for Replit Auth, with admin role)
+// User storage table (MANDATORY for Replit Auth, with role-based access)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  isAdmin: boolean("is_admin").default(false).notNull(),
+  role: varchar("role", { length: 50 }).default("customer").notNull(), // customer, admin, driver
+  isActive: boolean("is_active").default(true).notNull(),
+  // Driver specific fields
+  vehicleNumber: varchar("vehicle_number"),
+  driverLicenseNumber: varchar("driver_license_number"),
+  currentLatitude: varchar("current_latitude"),
+  currentLongitude: varchar("current_longitude"),
+  isAvailableForDelivery: boolean("is_available_for_delivery").default(false),
+  totalDeliveries: integer("total_deliveries").default(0),
+  averageRating: varchar("average_rating"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -42,13 +51,16 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
-// Products table
+// Products table - supports both flowers and pre-rolled packages
 export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
-  strainType: varchar("strain_type", { length: 50 }).notNull(), // Indica, Sativa, Hybrid
-  pricePerGram: integer("price_per_gram").notNull(), // Price in MWK
+  productType: varchar("product_type", { length: 50 }).notNull(), // "flower" or "preroll"
+  strainType: varchar("strain_type", { length: 50 }), // Indica, Sativa, Hybrid (for flowers)
+  size: varchar("size"), // For prerolls: 500, 1000, 1500, 2000 (mg)
+  pricePerGram: integer("price_per_gram"), // Price in MWK per gram (for flowers)
+  totalPrice: integer("total_price"), // Fixed price (for prerolls/packages)
   stockQuantity: integer("stock_quantity").notNull().default(0),
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true).notNull(),
@@ -65,15 +77,32 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
-// Orders table
+// Delivery Tracking table for real-time driver location updates
+export const deliveryTracking = pgTable("delivery_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  driverId: varchar("driver_id").notNull().references(() => users.id),
+  latitude: varchar("latitude").notNull(),
+  longitude: varchar("longitude").notNull(),
+  speed: integer("speed").default(0),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Orders table with driver assignment and tracking
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, processing, out_for_delivery, completed
+  driverId: varchar("driver_id").references(() => users.id),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending, processing, assigned, out_for_delivery, completed, cancelled
   deliveryLocation: text("delivery_location").notNull(),
+  deliveryLatitude: varchar("delivery_latitude"),
+  deliveryLongitude: varchar("delivery_longitude"),
   totalAmount: integer("total_amount").notNull(),
+  deliveryFee: integer("delivery_fee").default(0),
+  distanceKm: integer("distance_km").default(0), // For calculating delivery fee
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
@@ -158,5 +187,16 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   product: one(products, {
     fields: [cartItems.productId],
     references: [products.id],
+  }),
+}));
+
+export const deliveryTrackingRelations = relations(deliveryTracking, ({ one }) => ({
+  order: one(orders, {
+    fields: [deliveryTracking.orderId],
+    references: [orders.id],
+  }),
+  driver: one(users, {
+    fields: [deliveryTracking.driverId],
+    references: [users.id],
   }),
 }));

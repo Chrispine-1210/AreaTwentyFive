@@ -5,6 +5,7 @@ import {
   orders,
   orderItems,
   cartItems,
+  deliveryTracking,
   type User,
   type UpsertUser,
   type Product,
@@ -225,6 +226,87 @@ export class DatabaseStorage implements IStorage {
       .where(eq(orders.id, id))
       .returning();
     return order;
+  }
+
+  // Driver operations
+  async getAvailableDrivers(): Promise<User[]> {
+    return await db.select().from(users).where(
+      and(eq(users.role, "driver"), eq(users.isAvailableForDelivery, true))
+    );
+  }
+
+  async getDriverStats(driverId: string): Promise<any> {
+    const driver = await this.getUser(driverId);
+    return {
+      totalDeliveries: driver?.totalDeliveries || 0,
+      averageRating: driver?.averageRating || "N/A",
+      isAvailable: driver?.isAvailableForDelivery || false,
+    };
+  }
+
+  async assignOrderToDriver(orderId: string, driverId: string): Promise<Order | undefined> {
+    const [order] = await db
+      .update(orders)
+      .set({ driverId, status: "assigned", updatedAt: new Date() })
+      .where(eq(orders.id, orderId))
+      .returning();
+    return order;
+  }
+
+  async getDriverOrders(driverId: string): Promise<(Order & { orderItems?: OrderItem[] })[]> {
+    const driverOrders = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.driverId, driverId))
+      .orderBy(desc(orders.createdAt));
+
+    const ordersWithItems = await Promise.all(
+      driverOrders.map(async (order) => {
+        const items = await db
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.orderId, order.id));
+        
+        return {
+          ...order,
+          orderItems: items,
+        };
+      })
+    );
+
+    return ordersWithItems;
+  }
+
+  async updateDriverLocation(driverId: string, lat: string, lng: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ currentLatitude: lat, currentLongitude: lng })
+      .where(eq(users.id, driverId))
+      .returning();
+    return user;
+  }
+
+  async updateDeliveryTracking(orderId: string, driverId: string, lat: string, lng: string, speed: number): Promise<void> {
+    await db.insert(deliveryTracking).values({
+      orderId,
+      driverId,
+      latitude: lat,
+      longitude: lng,
+      speed,
+    });
+  }
+
+  async getDeliveryTracking(orderId: string): Promise<any[]> {
+    return await db.select().from(deliveryTracking).where(eq(deliveryTracking.orderId, orderId));
+  }
+
+  async setDriverAvailability(driverId: string, isAvailable: boolean): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ isAvailableForDelivery: isAvailable, updatedAt: new Date() })
+      .where(eq(users.id, driverId))
+      .returning();
+    return user;
   }
 }
 

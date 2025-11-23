@@ -11,9 +11,10 @@ import Landing from "@/pages/Landing";
 import Shop from "@/pages/Shop";
 import Orders from "@/pages/Orders";
 import Admin from "@/pages/Admin";
+import DriverDashboard from "@/pages/DriverDashboard";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   return (
     <Switch>
@@ -21,10 +22,11 @@ function Router() {
         <Route path="/" component={Landing} />
       ) : (
         <>
+          {user?.role === "driver" && <Route path="/driver" component={DriverDashboard} />}
+          {user?.role === "admin" && <Route path="/admin" component={Admin} />}
           <Route path="/" component={Shop} />
           <Route path="/shop" component={Shop} />
           <Route path="/orders" component={Orders} />
-          <Route path="/admin" component={Admin} />
         </>
       )}
       <Route component={NotFound} />
