@@ -12,6 +12,9 @@ import Shop from "@/pages/Shop";
 import Orders from "@/pages/Orders";
 import Admin from "@/pages/Admin";
 import DriverDashboard from "@/pages/DriverDashboard";
+import Loyalty from "@/pages/Loyalty";
+import Events from "@/pages/Events";
+import Analytics from "@/pages/Analytics";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -23,10 +26,17 @@ function Router() {
       ) : (
         <>
           {user?.role === "driver" && <Route path="/driver" component={DriverDashboard} />}
-          {user?.role === "admin" && <Route path="/admin" component={Admin} />}
+          {user?.role === "admin" && (
+            <>
+              <Route path="/admin" component={Admin} />
+              <Route path="/analytics" component={Analytics} />
+            </>
+          )}
           <Route path="/" component={Shop} />
           <Route path="/shop" component={Shop} />
           <Route path="/orders" component={Orders} />
+          <Route path="/loyalty" component={Loyalty} />
+          <Route path="/events" component={Events} />
         </>
       )}
       <Route component={NotFound} />

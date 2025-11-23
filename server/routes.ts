@@ -4,6 +4,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin, isDriver } from "./replitAuth";
 import { insertProductSchema, insertCartItemSchema, insertOrderSchema } from "@shared/schema";
+import { createPaymentIntent, confirmPayment, refundPayment } from "./services/stripe";
+import { sendSMSNotification, sendEmailNotification, notifyOrderStatusChange } from "./services/notifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -302,6 +304,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching tracking:", error);
       res.status(500).json({ message: "Failed to fetch tracking" });
+    }
+  });
+
+  // Payment routes
+  app.post("/api/payment/create-intent", isAuthenticated, async (req: any, res) => {
+    try {
+      const { orderId, amount } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.email) return res.status(400).json({ message: "User email not found" });
+      
+      const paymentIntent = await createPaymentIntent(amount, orderId, user.email);
+      await storage.createPaymentRecord(orderId, userId, amount, paymentIntent.id);
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      res.status(500).json({ message: error.message || "Failed to create payment" });
+    }
+  });
+
+  app.post("/api/payment/confirm", isAuthenticated, async (req: any, res) => {
+    try {
+      const { paymentIntentId, orderId } = req.body;
+      const payment = await confirmPayment(paymentIntentId);
+      
+      if (payment.status === 'succeeded') {
+        await storage.updateOrderStatus(orderId, 'processing');
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        
+        // Award loyalty points (1 point per MWK)
+        await storage.addLoyaltyPoints(userId, Math.floor((payment.amount || 0) / 100));
+        
+        // Notify customer
+        if (user?.email) {
+          await sendEmailNotification(
+            user.email,
+            'Payment Successful',
+            'Your payment has been confirmed. Your order is being processed.'
+          );
+        }
+      }
+      
+      res.json(payment);
+    } catch (error: any) {
+      console.error("Confirm payment error:", error);
+      res.status(500).json({ message: error.message || "Failed to confirm payment" });
+    }
+  });
+
+  // Loyalty routes
+  app.get("/api/loyalty", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const account = await storage.getLoyaltyAccount(userId);
+      res.json(account);
+    } catch (error) {
+      console.error("Error fetching loyalty:", error);
+      res.status(500).json({ message: "Failed to fetch loyalty info" });
+    }
+  });
+
+  // Events routes
+  app.get("/api/events", async (req, res) => {
+    try {
+      const events = await storage.getActiveEvents();
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      res.status(500).json({ message: "Failed to fetch events" });
+    }
+  });
+
+  app.post("/api/events", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const event = await storage.createEvent(req.body);
+      res.status(201).json(event);
+    } catch (error: any) {
+      console.error("Error creating event:", error);
+      res.status(400).json({ message: error.message || "Failed to create event" });
+    }
+  });
+
+  // Inventory alerts routes
+  app.get("/api/admin/inventory-alerts", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const alerts = await storage.checkLowInventory();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      res.status(500).json({ message: "Failed to fetch alerts" });
+    }
+  });
+
+  // Analytics routes
+  app.get("/api/admin/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const summary = await storage.getAnalyticsSummary(days);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
 

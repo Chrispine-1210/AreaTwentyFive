@@ -6,6 +6,12 @@ import {
   orderItems,
   cartItems,
   deliveryTracking,
+  loyaltyProgram,
+  paymentRecords,
+  events,
+  inventoryAlerts,
+  notificationLog,
+  analyticsSummary,
   type User,
   type UpsertUser,
   type Product,
@@ -18,7 +24,7 @@ import {
   type InsertCartItem,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, lt, gte } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (MANDATORY for Replit Auth)
@@ -307,6 +313,108 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, driverId))
       .returning();
     return user;
+  }
+
+  // Loyalty Program operations
+  async getLoyaltyAccount(userId: string): Promise<any> {
+    const [account] = await db.select().from(loyaltyProgram).where(eq(loyaltyProgram.userId, userId));
+    return account || { userId, points: 0, totalSpent: 0, tier: 'bronze' };
+  }
+
+  async addLoyaltyPoints(userId: string, points: number): Promise<any> {
+    const existing = await this.getLoyaltyAccount(userId);
+    if (existing.id) {
+      const [updated] = await db
+        .update(loyaltyProgram)
+        .set({ points: existing.points + points, lastPointsUpdate: new Date() })
+        .where(eq(loyaltyProgram.userId, userId))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(loyaltyProgram).values({ userId, points }).returning();
+      return created;
+    }
+  }
+
+  // Payment operations
+  async createPaymentRecord(orderId: string, userId: string, amount: number, stripeIntentId?: string): Promise<any> {
+    const [record] = await db.insert(paymentRecords).values({
+      orderId,
+      userId,
+      amount,
+      stripePaymentIntentId: stripeIntentId,
+      status: 'pending',
+    }).returning();
+    return record;
+  }
+
+  async updatePaymentStatus(paymentId: string, status: string): Promise<any> {
+    const [updated] = await db
+      .update(paymentRecords)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(paymentRecords.id, paymentId))
+      .returning();
+    return updated;
+  }
+
+  // Events operations
+  async getActiveEvents(): Promise<any[]> {
+    return await db.select().from(events).where(eq(events.isActive, true));
+  }
+
+  async createEvent(data: any): Promise<any> {
+    const [event] = await db.insert(events).values(data).returning();
+    return event;
+  }
+
+  // Inventory Alerts operations
+  async checkLowInventory(): Promise<any[]> {
+    return await db
+      .select()
+      .from(inventoryAlerts)
+      .where(and(eq(inventoryAlerts.isActive, true), lt(inventoryAlerts.currentStock, inventoryAlerts.minimumThreshold)));
+  }
+
+  async updateInventoryAlert(productId: string, currentStock: number): Promise<void> {
+    await db
+      .update(inventoryAlerts)
+      .set({ currentStock })
+      .where(eq(inventoryAlerts.productId, productId));
+  }
+
+  // Notification Log operations
+  async logNotification(data: any): Promise<any> {
+    const [log] = await db.insert(notificationLog).values(data).returning();
+    return log;
+  }
+
+  // Analytics operations
+  async getOrCreateDailySummary(date: string): Promise<any> {
+    const [existing] = await db.select().from(analyticsSummary).where(eq(analyticsSummary.date, date));
+    if (existing) return existing;
+    const [created] = await db.insert(analyticsSummary).values({ date }).returning();
+    return created;
+  }
+
+  async updateAnalyticsSummary(date: string, data: any): Promise<any> {
+    const [updated] = await db
+      .update(analyticsSummary)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(analyticsSummary.date, date))
+      .returning();
+    return updated;
+  }
+
+  async getAnalyticsSummary(days: number = 30): Promise<any[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const formattedDate = startDate.toISOString().split('T')[0];
+    
+    return await db
+      .select()
+      .from(analyticsSummary)
+      .where(gte(analyticsSummary.date, formattedDate))
+      .orderBy(desc(analyticsSummary.date));
   }
 }
 

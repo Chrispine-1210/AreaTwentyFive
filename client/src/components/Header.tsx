@@ -1,4 +1,4 @@
-import { ShoppingCart, User, LogOut, LayoutDashboard, Truck } from "lucide-react";
+import { ShoppingCart, User, LogOut, LayoutDashboard, Truck, Gift, Calendar, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
