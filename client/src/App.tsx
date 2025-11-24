@@ -17,6 +17,7 @@ import DriverDashboard from "@/pages/DriverDashboard";
 import Loyalty from "@/pages/Loyalty";
 import Events from "@/pages/Events";
 import Analytics from "@/pages/Analytics";
+import AccountSettings from "@/pages/AccountSettings";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -46,6 +47,7 @@ function Router() {
           <Route path="/orders" component={Orders} />
           <Route path="/loyalty" component={Loyalty} />
           <Route path="/events" component={Events} />
+          <Route path="/settings" component={AccountSettings} />
           <Route component={NotFound} />
         </>
       )}

@@ -14,6 +14,9 @@ const signUpSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be valid"),
   location: z.string().min(1, "Please select your location"),
+  role: z.enum(["customer", "admin", "driver"], {
+    errorMap: () => ({ message: "Please select your account type" }),
+  }),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -31,6 +34,7 @@ export default function SignUp() {
       email: "",
       phone: "",
       location: "",
+      role: "customer",
       password: "",
       confirmPassword: "",
     },
@@ -38,7 +42,14 @@ export default function SignUp() {
 
   async function onSubmit(values: SignUpFormValues) {
     try {
-      window.location.href = `/api/login?email=${encodeURIComponent(values.email)}&name=${encodeURIComponent(values.name)}`;
+      const params = new URLSearchParams({
+        email: values.email,
+        name: values.name,
+        role: values.role,
+        phone: values.phone,
+        location: values.location,
+      });
+      window.location.href = `/api/login?${params.toString()}`;
     } catch (error) {
       console.error("Sign up error:", error);
     }
@@ -58,7 +69,7 @@ export default function SignUp() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
               <h2 className="font-heading text-3xl font-bold mb-2">Join Our Community</h2>
-              <p className="text-lg text-white/90">Start enjoying premium products today</p>
+              <p className="text-lg text-white/90">Start as a customer, seller, or driver</p>
             </div>
           </div>
 
@@ -80,7 +91,7 @@ export default function SignUp() {
               <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center">
                 <Check className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-foreground">Loyalty rewards program</span>
+              <span className="text-foreground">Earn as a driver or seller</span>
             </div>
           </div>
         </div>
@@ -95,13 +106,42 @@ export default function SignUp() {
               </div>
               <div>
                 <CardTitle className="text-2xl">Create Account</CardTitle>
-                <CardDescription>Join us and start shopping</CardDescription>
+                <CardDescription>Choose your role and join our platform</CardDescription>
               </div>
             </CardHeader>
 
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Account Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-signup-role">
+                              <SelectValue placeholder="Select account type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="customer">
+                              <span>🛍️ Customer - Shop & Order</span>
+                            </SelectItem>
+                            <SelectItem value="admin">
+                              <span>📊 Admin - Manage Store</span>
+                            </SelectItem>
+                            <SelectItem value="driver">
+                              <span>🚚 Driver - Deliver Orders</span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="name"

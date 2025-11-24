@@ -124,6 +124,16 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
                 </Button>
               )}
 
+              <Link href="/settings">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  data-testid="button-settings"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+
               <a href="/api/logout">
                 <Button
                   variant="ghost"
