@@ -1,12 +1,44 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Leaf, Shield, Truck, Users, TrendingUp, MapPin } from "lucide-react";
+import { Leaf, Shield, Truck, Users, TrendingUp, MapPin, Star, MessageCircle, Clock, Award } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 import shopImage from '@assets/generated_images/modern_e-commerce_storefront.png';
 import driverImage from '@assets/generated_images/professional_delivery_driver.png';
 import adminImage from '@assets/generated_images/admin_dashboard_analytics.png';
 import paymentImage from '@assets/generated_images/mobile_payment_interface.png';
 
 export default function Landing() {
+  const [email, setEmail] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: "Is Mede-Mede Spot legal?",
+      answer: "Yes, we operate in compliance with all local regulations for cannabis retail in Malawi. All products are sourced legally and quality-tested."
+    },
+    {
+      question: "How fast is delivery?",
+      answer: "We offer same-day delivery within Area 25. Most orders are delivered within 2-3 hours of placement."
+    },
+    {
+      question: "What payment methods do you accept?",
+      answer: "We accept Stripe card payments, mobile money (Airtel Money, MTN), cash on delivery, and digital wallets."
+    },
+    {
+      question: "Can I return products?",
+      answer: "Yes, all unopened products can be returned within 7 days for a full refund or exchange."
+    },
+    {
+      question: "How does the loyalty program work?",
+      answer: "Earn 1 point per MWK spent. Collect points to unlock discounts, free products, and exclusive member benefits."
+    },
+    {
+      question: "Is my information secure?",
+      answer: "Absolutely. We use industry-standard encryption and never share your personal data with third parties."
+    }
+  ];
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -63,6 +95,30 @@ export default function Landing() {
                 alt="Modern dispensary"
                 className="w-full h-auto object-cover"
               />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-12 md:py-16 bg-primary/5">
+        <div className="container mx-auto px-4">
+          <div className="grid gap-8 md:grid-cols-4">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">2,500+</div>
+              <p className="text-muted-foreground">Happy Customers</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-secondary mb-2">15K+</div>
+              <p className="text-muted-foreground">Deliveries Completed</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-accent mb-2">4.8/5</div>
+              <p className="text-muted-foreground">Average Rating</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">24/7</div>
+              <p className="text-muted-foreground">Available Service</p>
             </div>
           </div>
         </div>
@@ -281,8 +337,60 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Payment Section */}
+      {/* Testimonials Section */}
       <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-heading text-3xl font-semibold md:text-4xl mb-4">
+              What Our Users Say
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Join thousands of satisfied customers who trust Mede-Mede Spot.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {[
+              {
+                name: "James Banda",
+                role: "Customer",
+                text: "Best service in Area 25. Fast delivery and great products!",
+                rating: 5
+              },
+              {
+                name: "Mercy Kachale",
+                role: "Delivery Partner",
+                text: "Flexible work and good earnings. Love working with Mede-Mede!",
+                rating: 5
+              },
+              {
+                name: "Michael Phiri",
+                role: "Store Manager",
+                text: "Excellent analytics tools. My inventory management has never been easier.",
+                rating: 5
+              }
+            ].map((testimonial, index) => (
+              <Card key={index} className="hover-elevate">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex gap-1">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground italic">"{testimonial.text}"</p>
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Payment Section */}
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
             <div className="order-2 lg:order-1">
@@ -347,6 +455,82 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="font-heading text-3xl font-semibold md:text-4xl mb-4">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-muted-foreground">
+              Got questions? We've got answers.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <Card key={index} className="cursor-pointer hover-elevate" data-testid={`faq-item-${index}`}>
+                <CardContent 
+                  className="p-6"
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">{faq.question}</h3>
+                    <MessageCircle className={`h-5 w-5 text-primary transition-transform ${openFaq === index ? 'rotate-180' : ''}`} />
+                  </div>
+                  {openFaq === index && (
+                    <p className="text-muted-foreground mt-4">{faq.answer}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 md:py-24 bg-gradient-to-br from-primary/10 to-secondary/10">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <div className="text-center space-y-6">
+            <div className="space-y-4">
+              <h2 className="font-heading text-3xl font-semibold md:text-4xl">
+                Stay Updated
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Subscribe to our newsletter for exclusive offers, new products, and community updates.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1"
+                data-testid="input-newsletter-email"
+              />
+              <Button 
+                size="lg"
+                data-testid="button-newsletter-subscribe"
+                onClick={() => {
+                  if (email) {
+                    alert("Thanks for subscribing! Check your email for exclusive offers.");
+                    setEmail("");
+                  }
+                }}
+              >
+                Subscribe
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              We respect your privacy. Unsubscribe at any time.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4">
@@ -374,6 +558,50 @@ export default function Landing() {
           </Card>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/30 py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid gap-8 md:grid-cols-4 mb-8">
+            <div className="space-y-4">
+              <h3 className="font-heading font-semibold">Mede-Mede Spot</h3>
+              <p className="text-sm text-muted-foreground">
+                Your trusted cannabis delivery service in Area 25, Lilongwe.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground">Shop</a></li>
+                <li><a href="#" className="hover:text-foreground">Orders</a></li>
+                <li><a href="#" className="hover:text-foreground">Events</a></li>
+                <li><a href="#" className="hover:text-foreground">Loyalty</a></li>
+              </ul>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground">About Us</a></li>
+                <li><a href="#" className="hover:text-foreground">Contact</a></li>
+                <li><a href="#" className="hover:text-foreground">Careers</a></li>
+                <li><a href="#" className="hover:text-foreground">Blog</a></li>
+              </ul>
+            </div>
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><a href="#" className="hover:text-foreground">Privacy</a></li>
+                <li><a href="#" className="hover:text-foreground">Terms</a></li>
+                <li><a href="#" className="hover:text-foreground">Safety</a></li>
+                <li><a href="#" className="hover:text-foreground">Support</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
+            <p>&copy; 2025 Mede-Mede Spot. All rights reserved. Licensed and operating legally in Malawi.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
