@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Leaf, Check } from "lucide-react";
+import { RoleSelector } from "@/components/RoleSelector";
+import { UserRole } from "@/types/roles";
 import appImage from '@assets/generated_images/user_enjoying_mobile_app.png';
 
 const signUpSchema = z.object({
@@ -17,6 +19,10 @@ const signUpSchema = z.object({
   role: z.enum(["customer", "admin", "driver"], {
     errorMap: () => ({ message: "Please select your account type" }),
   }),
+  businessName: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  vehicleNumber: z.string().optional(),
+  driverLicenseNumber: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -118,25 +124,14 @@ export default function SignUp() {
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Account Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-signup-role">
-                              <SelectValue placeholder="Select account type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="customer">
-                              <span>🛍️ Customer - Shop & Order</span>
-                            </SelectItem>
-                            <SelectItem value="admin">
-                              <span>📊 Admin - Manage Store</span>
-                            </SelectItem>
-                            <SelectItem value="driver">
-                              <span>🚚 Driver - Deliver Orders</span>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormLabel>Choose Your Role</FormLabel>
+                        <FormControl>
+                          <RoleSelector
+                            selectedRole={field.value as UserRole}
+                            onRoleChange={field.onChange}
+                            showDescriptions={true}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -221,6 +216,69 @@ export default function SignUp() {
                       </FormItem>
                     )}
                   />
+
+                  {/* Role-Specific Fields */}
+                  {form.watch('role') === 'admin' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="businessName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Business Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Your business name" {...field} data-testid="input-signup-businessname" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="licenseNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>License Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Business license" {...field} data-testid="input-signup-licensenumber" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+
+                  {form.watch('role') === 'driver' && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="vehicleNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Vehicle Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., MZ AB 1234" {...field} data-testid="input-signup-vehiclenumber" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="driverLicenseNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Driver License Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="License number" {...field} data-testid="input-signup-drivelicense" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
 
                   <FormField
                     control={form.control}
