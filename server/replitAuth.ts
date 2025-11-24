@@ -25,7 +25,8 @@ const getOidcConfig = memoize(
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const sessionStore = new (MemoryStore(session))({
+  const Store = MemoryStore(session);
+  const sessionStore = new Store({
     checkPeriod: 86400000,
   });
   return session({
