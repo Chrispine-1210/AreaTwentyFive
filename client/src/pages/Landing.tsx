@@ -572,28 +572,28 @@ export default function Landing() {
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">Quick Links</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Shop</a></li>
-                <li><a href="#" className="hover:text-foreground">Orders</a></li>
-                <li><a href="#" className="hover:text-foreground">Events</a></li>
-                <li><a href="#" className="hover:text-foreground">Loyalty</a></li>
+                <li><a href="/shop" className="hover:text-foreground">Shop</a></li>
+                <li><a href="/orders" className="hover:text-foreground">Orders</a></li>
+                <li><a href="/events" className="hover:text-foreground">Events</a></li>
+                <li><a href="/loyalty" className="hover:text-foreground">Loyalty</a></li>
               </ul>
             </div>
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Company</h4>
+              <h4 className="font-semibold text-sm">Help</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About Us</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact</a></li>
-                <li><a href="#" className="hover:text-foreground">Careers</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
+                <li><a href="/signin" className="hover:text-foreground">Sign In</a></li>
+                <li><a href="/signup" className="hover:text-foreground">Create Account</a></li>
+                <li><a href="/settings" className="hover:text-foreground">Account Settings</a></li>
+                <li><a href="/analytics" className="hover:text-foreground">Analytics</a></li>
               </ul>
             </div>
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Legal</h4>
+              <h4 className="font-semibold text-sm">About</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground">Terms</a></li>
-                <li><a href="#" className="hover:text-foreground">Safety</a></li>
-                <li><a href="#" className="hover:text-foreground">Support</a></li>
+                <li className="text-foreground">Premium Quality Products</li>
+                <li className="text-foreground">Fast Local Delivery</li>
+                <li className="text-foreground">Community Focused</li>
+                <li className="text-foreground">Licensed & Legal</li>
               </ul>
             </div>
           </div>
