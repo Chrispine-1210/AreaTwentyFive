@@ -22,35 +22,37 @@ import AccountSettings from "@/pages/AccountSettings";
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
+  if (isLoading) {
+    return <Landing />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/signin" component={SignIn} />
+        <Route path="/signup" component={SignUp} />
+        <Route component={NotFound} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      {isLoading ? (
-        <Route path="/" component={Landing} />
-      ) : !isAuthenticated ? (
+      {user?.role === "driver" && <Route path="/driver" component={DriverDashboard} />}
+      {user?.role === "admin" && (
         <>
-          <Route path="/" component={Landing} />
-          <Route path="/signin" component={SignIn} />
-          <Route path="/signup" component={SignUp} />
-          <Route component={NotFound} />
-        </>
-      ) : (
-        <>
-          {user?.role === "driver" && <Route path="/driver" component={DriverDashboard} />}
-          {user?.role === "admin" && (
-            <>
-              <Route path="/admin" component={Admin} />
-              <Route path="/analytics" component={Analytics} />
-            </>
-          )}
-          <Route path="/" component={Shop} />
-          <Route path="/shop" component={Shop} />
-          <Route path="/orders" component={Orders} />
-          <Route path="/loyalty" component={Loyalty} />
-          <Route path="/events" component={Events} />
-          <Route path="/settings" component={AccountSettings} />
-          <Route component={NotFound} />
+          <Route path="/admin" component={Admin} />
+          <Route path="/analytics" component={Analytics} />
         </>
       )}
+      <Route path="/" component={Shop} />
+      <Route path="/shop" component={Shop} />
+      <Route path="/orders" component={Orders} />
+      <Route path="/loyalty" component={Loyalty} />
+      <Route path="/events" component={Events} />
+      <Route path="/settings" component={AccountSettings} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
