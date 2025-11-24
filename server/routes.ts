@@ -371,11 +371,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Events routes
   app.get("/api/events", async (req, res) => {
     try {
-      const events = await storage.getActiveEvents();
-      res.json(events);
+      const eventsList = await storage.getActiveEvents();
+      res.json(eventsList || []);
     } catch (error) {
       console.error("Error fetching events:", error);
-      res.status(500).json({ message: "Failed to fetch events" });
+      res.json([]);
     }
   });
 
@@ -393,10 +393,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/inventory-alerts", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const alerts = await storage.checkLowInventory();
-      res.json(alerts);
+      res.json(alerts || []);
     } catch (error) {
       console.error("Error fetching alerts:", error);
-      res.status(500).json({ message: "Failed to fetch alerts" });
+      res.json([]);
     }
   });
 
@@ -405,10 +405,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const days = parseInt(req.query.days as string) || 30;
       const summary = await storage.getAnalyticsSummary(days);
-      res.json(summary);
+      res.json(summary || []);
     } catch (error) {
       console.error("Error fetching analytics:", error);
-      res.status(500).json({ message: "Failed to fetch analytics" });
+      res.json([]);
     }
   });
 
