@@ -28,7 +28,7 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <>
               <Link href="/shop">
                 <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-shop">
@@ -57,6 +57,19 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
                   </a>
                 </Link>
               )}
+            </>
+          ) : (
+            <>
+              <Link href="/signin">
+                <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-signin-nav">
+                  Sign In
+                </a>
+              </Link>
+              <Link href="/signup">
+                <a className="text-sm font-medium text-foreground hover-elevate active-elevate-2 rounded-md px-3 py-2" data-testid="link-signup-nav">
+                  Sign Up
+                </a>
+              </Link>
             </>
           )}
         </nav>

@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
+import SignIn from "@/pages/SignIn";
+import SignUp from "@/pages/SignUp";
 import Shop from "@/pages/Shop";
 import Orders from "@/pages/Orders";
 import Admin from "@/pages/Admin";
@@ -21,8 +23,15 @@ function Router() {
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {isLoading ? (
         <Route path="/" component={Landing} />
+      ) : !isAuthenticated ? (
+        <>
+          <Route path="/" component={Landing} />
+          <Route path="/signin" component={SignIn} />
+          <Route path="/signup" component={SignUp} />
+          <Route component={NotFound} />
+        </>
       ) : (
         <>
           {user?.role === "driver" && <Route path="/driver" component={DriverDashboard} />}
@@ -37,9 +46,9 @@ function Router() {
           <Route path="/orders" component={Orders} />
           <Route path="/loyalty" component={Loyalty} />
           <Route path="/events" component={Events} />
+          <Route component={NotFound} />
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
