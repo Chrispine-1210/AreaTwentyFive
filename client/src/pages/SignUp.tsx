@@ -6,13 +6,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Leaf, Check } from "lucide-react";
+import { Leaf, Check, Loader2 } from "lucide-react";
 import { RoleSelector } from "@/components/RoleSelector";
 import { UserRole } from "@/types/roles";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import appImage from '@assets/generated_images/user_enjoying_mobile_app.png';
 
 const signUpSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be valid"),
   location: z.string().min(1, "Please select your location"),
@@ -33,10 +37,15 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export default function SignUp() {
+  const [, setLocation] = useLocation();
+  const { register, isRegistering } = useAuth();
+  const { toast } = useToast();
+
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       phone: "",
       location: "",
@@ -48,16 +57,36 @@ export default function SignUp() {
 
   async function onSubmit(values: SignUpFormValues) {
     try {
-      const params = new URLSearchParams({
+      await register({
         email: values.email,
-        name: values.name,
+        password: values.password,
+        firstName: values.firstName,
+        lastName: values.lastName,
         role: values.role,
-        phone: values.phone,
-        location: values.location,
+        phoneNumber: values.phone,
+        vehicleNumber: values.vehicleNumber,
+        driverLicenseNumber: values.driverLicenseNumber,
       });
-      window.location.href = `/api/login?${params.toString()}`;
-    } catch (error) {
-      console.error("Sign up error:", error);
+      
+      toast({
+        title: "Account Created!",
+        description: "Welcome to Mede-Mede Spot. You're now signed in.",
+      });
+
+      // Redirect based on role
+      if (values.role === "admin") {
+        setLocation("/admin");
+      } else if (values.role === "driver") {
+        setLocation("/driver");
+      } else {
+        setLocation("/shop");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Could not create account. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -104,8 +133,8 @@ export default function SignUp() {
 
         {/* Right - Form Section */}
         <div className="flex justify-center">
-          <Card className="w-full max-w-md shadow-lg">
-            <CardHeader className="space-y-4 pb-6">
+          <Card className="w-full max-w-md shadow-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader className="space-y-4 pb-6 sticky top-0 bg-card z-10">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Leaf className="h-8 w-8 text-primary" />
                 <span className="font-heading text-2xl font-bold">Mede-Mede Spot</span>
@@ -137,23 +166,45 @@ export default function SignUp() {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="John Doe"
-                            {...field}
-                            data-testid="input-signup-name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="John"
+                              {...field}
+                              disabled={isRegistering}
+                              data-testid="input-signup-firstname"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Doe"
+                              {...field}
+                              disabled={isRegistering}
+                              data-testid="input-signup-lastname"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -166,6 +217,7 @@ export default function SignUp() {
                             type="email"
                             placeholder="you@example.com"
                             {...field}
+                            disabled={isRegistering}
                             data-testid="input-signup-email"
                           />
                         </FormControl>
@@ -185,6 +237,7 @@ export default function SignUp() {
                             type="tel"
                             placeholder="+265 1 23 456 789"
                             {...field}
+                            disabled={isRegistering}
                             data-testid="input-signup-phone"
                           />
                         </FormControl>
@@ -199,7 +252,7 @@ export default function SignUp() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Location</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isRegistering}>
                           <FormControl>
                             <SelectTrigger data-testid="select-signup-location">
                               <SelectValue placeholder="Select your area" />
@@ -227,7 +280,12 @@ export default function SignUp() {
                           <FormItem>
                             <FormLabel>Business Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Your business name" {...field} data-testid="input-signup-businessname" />
+                              <Input 
+                                placeholder="Your business name" 
+                                {...field} 
+                                disabled={isRegistering}
+                                data-testid="input-signup-businessname" 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -240,7 +298,12 @@ export default function SignUp() {
                           <FormItem>
                             <FormLabel>License Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="Business license" {...field} data-testid="input-signup-licensenumber" />
+                              <Input 
+                                placeholder="Business license" 
+                                {...field} 
+                                disabled={isRegistering}
+                                data-testid="input-signup-licensenumber" 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -258,7 +321,12 @@ export default function SignUp() {
                           <FormItem>
                             <FormLabel>Vehicle Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., MZ AB 1234" {...field} data-testid="input-signup-vehiclenumber" />
+                              <Input 
+                                placeholder="e.g., MZ AB 1234" 
+                                {...field} 
+                                disabled={isRegistering}
+                                data-testid="input-signup-vehiclenumber" 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -271,7 +339,12 @@ export default function SignUp() {
                           <FormItem>
                             <FormLabel>Driver License Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="License number" {...field} data-testid="input-signup-drivelicense" />
+                              <Input 
+                                placeholder="License number" 
+                                {...field} 
+                                disabled={isRegistering}
+                                data-testid="input-signup-drivelicense" 
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -289,8 +362,9 @@ export default function SignUp() {
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="At least 6 characters"
                             {...field}
+                            disabled={isRegistering}
                             data-testid="input-signup-password"
                           />
                         </FormControl>
@@ -308,8 +382,9 @@ export default function SignUp() {
                         <FormControl>
                           <Input
                             type="password"
-                            placeholder="••••••••"
+                            placeholder="Confirm your password"
                             {...field}
+                            disabled={isRegistering}
                             data-testid="input-signup-confirmpassword"
                           />
                         </FormControl>
@@ -322,9 +397,17 @@ export default function SignUp() {
                     type="submit"
                     size="lg"
                     className="w-full"
+                    disabled={isRegistering}
                     data-testid="button-signup-submit"
                   >
-                    Create Account
+                    {isRegistering ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
                   </Button>
                 </form>
               </Form>

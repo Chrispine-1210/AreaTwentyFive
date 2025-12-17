@@ -1,13 +1,21 @@
 # Mede-Mede Spot E-Commerce Platform
 
 ## Overview
-A premium cannabis e-commerce platform for Mede-Mede Spot in Area 25. Features user authentication, product catalog, shopping cart, order tracking, and admin dashboard for inventory management.
+A premium cannabis e-commerce platform for Mede-Mede Spot in Area 25, Malawi. Features role-based user authentication (customer, admin, driver), product catalog, shopping cart, order tracking, real-time delivery tracking, loyalty program, and comprehensive admin dashboard.
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, TailwindCSS, Shadcn UI, TanStack Query, Wouter
-- **Backend**: Express.js, Node.js
+- **Backend**: Express.js, Node.js, Passport.js
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
-- **Authentication**: Replit Auth (OpenID Connect)
+- **Authentication**: Standalone passport-local with bcryptjs password hashing
+
+## Recent Changes (December 2024)
+- Migrated from Replit Auth to standalone passport-local authentication
+- Added bcryptjs for secure password hashing (12 salt rounds)
+- Created role-based access control (customer, admin, driver)
+- Updated all backend routes to use req.user.id instead of req.user.claims.sub
+- Updated frontend auth hooks (useAuth.ts) with login/register/logout mutations
+- Fixed React hooks ordering issues in App.tsx with role-based route components
 
 ## Features
 
@@ -57,16 +65,17 @@ A premium cannabis e-commerce platform for Mede-Mede Spot in Area 25. Features u
 - id, userId, productId, quantity
 - createdAt
 
-### Sessions (for Replit Auth)
+### Sessions
 - sid (primary key)
 - sess (jsonb), expire
 
 ## API Endpoints
 
-### Auth
-- GET /api/login - Initiate login flow
-- GET /api/logout - Logout
-- GET /api/auth/user - Get current user
+### Auth (Standalone)
+- POST /api/auth/register - Create new account with email/password
+- POST /api/auth/login - Login with email/password
+- POST /api/auth/logout - Logout and destroy session
+- GET /api/auth/user - Get current authenticated user
 
 ### Products
 - GET /api/products - List all products

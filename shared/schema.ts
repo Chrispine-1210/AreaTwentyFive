@@ -1,5 +1,5 @@
 // Database schema for Mede-Mede Spot e-commerce platform
-// Reference: javascript_log_in_with_replit and javascript_database blueprints
+// Professional standalone authentication system
 
 import { sql, relations } from 'drizzle-orm';
 import {
@@ -16,7 +16,7 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table (MANDATORY for Replit Auth)
+// Session storage table for express-session
 export const sessions = pgTable(
   "sessions",
   {
@@ -27,10 +27,11 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (MANDATORY for Replit Auth, with role-based access)
+// User storage table with standalone authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  email: varchar("email").unique().notNull(),
+  passwordHash: varchar("password_hash"), // For standalone auth
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -48,8 +49,32 @@ export const users = pgTable("users", {
   loyaltyPoints: integer("loyalty_points").default(0),
   loyaltyTier: varchar("loyalty_tier", { length: 50 }).default("bronze"), // bronze, silver, gold, platinum
   phoneNumber: varchar("phone_number"), // For SMS notifications
+  // ML/Analytics metadata
+  lastLoginAt: timestamp("last_login_at"),
+  loginCount: integer("login_count").default(0),
+  preferences: jsonb("preferences"), // User preferences for ML recommendations
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Registration schema with validation
+export const registerUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  role: z.enum(["customer", "admin", "driver"]).default("customer"),
+  phoneNumber: z.string().optional(),
+  vehicleNumber: z.string().optional(),
+  driverLicenseNumber: z.string().optional(),
+});
+
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+
+// Login schema
+export const loginUserSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export type UpsertUser = typeof users.$inferInsert;

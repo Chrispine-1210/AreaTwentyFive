@@ -6,9 +6,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Leaf } from "lucide-react";
+import { Leaf, Loader2 } from "lucide-react";
 import { UserRole, RoleConfigurations } from "@/types/roles";
 import { useState } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import shopImage from '@assets/generated_images/welcoming_cannabis_shop_interior.png';
 import driverImage from '@assets/generated_images/professional_delivery_driver.png';
 import adminImage from '@assets/generated_images/admin_dashboard_analytics.png';
@@ -27,7 +30,11 @@ const roleImages = {
 };
 
 export default function SignInPro() {
+  const [, setLocation] = useLocation();
   const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.CUSTOMER);
+  const { login, isLoggingIn } = useAuth();
+  const { toast } = useToast();
+  
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -38,9 +45,26 @@ export default function SignInPro() {
 
   async function onSubmit(values: SignInFormValues) {
     try {
-      window.location.href = `/api/login?email=${encodeURIComponent(values.email)}&role=${selectedRole}`;
-    } catch (error) {
-      console.error("Sign in error:", error);
+      await login({ email: values.email, password: values.password });
+      toast({
+        title: "Welcome Back!",
+        description: `Signed in successfully as ${RoleConfigurations[selectedRole].label}`,
+      });
+      
+      // Redirect based on role
+      if (selectedRole === UserRole.ADMIN) {
+        setLocation("/admin");
+      } else if (selectedRole === UserRole.DRIVER) {
+        setLocation("/driver");
+      } else {
+        setLocation("/shop");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Sign In Failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
     }
   }
 
@@ -128,6 +152,7 @@ export default function SignInPro() {
                                   type="email"
                                   placeholder="you@example.com"
                                   {...field}
+                                  disabled={isLoggingIn}
                                   data-testid={`input-signin-email-${role}`}
                                 />
                               </FormControl>
@@ -145,8 +170,9 @@ export default function SignInPro() {
                               <FormControl>
                                 <Input
                                   type="password"
-                                  placeholder="••••••••"
+                                  placeholder="Enter your password"
                                   {...field}
+                                  disabled={isLoggingIn}
                                   data-testid={`input-signin-password-${role}`}
                                 />
                               </FormControl>
@@ -159,9 +185,17 @@ export default function SignInPro() {
                           type="submit"
                           size="lg"
                           className="w-full"
+                          disabled={isLoggingIn}
                           data-testid={`button-signin-submit-${role}`}
                         >
-                          Sign In as {RoleConfigurations[role].label}
+                          {isLoggingIn ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Signing in...
+                            </>
+                          ) : (
+                            `Sign In as ${RoleConfigurations[role].label}`
+                          )}
                         </Button>
                       </form>
                     </Form>
@@ -177,15 +211,16 @@ export default function SignInPro() {
                   </a>
                 </p>
 
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => (window.location.href = "/api/login")}
-                  data-testid="button-signin-replit-pro"
-                >
-                  Sign In with Replit
-                </Button>
+                <a href="/" className="block">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full"
+                    data-testid="button-back-home"
+                  >
+                    Back to Home
+                  </Button>
+                </a>
               </div>
             </CardContent>
           </Card>

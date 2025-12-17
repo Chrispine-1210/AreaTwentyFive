@@ -1,27 +1,15 @@
-// Reference: javascript_log_in_with_replit blueprint
+// Professional E-Commerce Platform - Routes
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, isAdmin, isDriver } from "./replitAuth";
+import { setupAuth, isAuthenticated, isAdmin, isDriver } from "./auth";
 import { insertProductSchema, insertCartItemSchema, insertOrderSchema } from "@shared/schema";
 import { createPaymentIntent, confirmPayment, refundPayment } from "./services/stripe";
 import { sendSMSNotification, sendEmailNotification, notifyOrderStatusChange } from "./services/notifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Auth middleware - standalone authentication
   await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
 
   // Product routes
   app.get("/api/products", async (req, res) => {
@@ -74,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Cart routes
   app.get("/api/cart", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const items = await storage.getCartItems(userId);
       res.json(items);
     } catch (error) {
@@ -85,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cart", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertCartItemSchema.parse({
         ...req.body,
         userId,
@@ -128,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order routes
   app.post("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { deliveryLocation } = req.body;
 
       if (!deliveryLocation) {
@@ -178,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/orders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getOrders(userId);
       res.json(orders);
     } catch (error) {
@@ -228,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/driver/stats", isAuthenticated, isDriver, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const stats = await storage.getDriverStats(userId);
       res.json(stats);
     } catch (error) {
@@ -239,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/driver/deliveries", isAuthenticated, isDriver, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getDriverOrders(userId);
       res.json(orders);
     } catch (error) {
@@ -251,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/driver/location", isAuthenticated, isDriver, async (req: any, res) => {
     try {
       const { latitude, longitude, speed } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       if (!latitude || !longitude) {
         return res.status(400).json({ message: "Latitude and longitude required" });
@@ -276,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/driver/accept/:orderId", isAuthenticated, isDriver, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const order = await storage.assignOrderToDriver(req.params.orderId, userId);
       res.json(order);
     } catch (error) {
@@ -288,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/driver/availability", isAuthenticated, isDriver, async (req: any, res) => {
     try {
       const { isAvailable } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.setDriverAvailability(userId, isAvailable);
       res.json(user);
     } catch (error) {
@@ -311,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payment/create-intent", isAuthenticated, async (req: any, res) => {
     try {
       const { orderId, amount } = req.body;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (!user?.email) return res.status(400).json({ message: "User email not found" });
@@ -333,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (payment.status === 'succeeded') {
         await storage.updateOrderStatus(orderId, 'processing');
-        const userId = req.user.claims.sub;
+        const userId = req.user.id;
         const user = await storage.getUser(userId);
         
         // Award loyalty points (1 point per MWK)
@@ -359,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Loyalty routes
   app.get("/api/loyalty", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const account = await storage.getLoyaltyAccount(userId);
       res.json(account);
     } catch (error) {

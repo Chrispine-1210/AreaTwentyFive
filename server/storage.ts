@@ -1,4 +1,4 @@
-// Reference: javascript_log_in_with_replit and javascript_database blueprints
+// Professional E-Commerce Platform - Storage Layer
 import {
   type User,
   type UpsertUser,
@@ -13,8 +13,11 @@ import {
 } from "@shared/schema";
 
 export interface IStorage {
-  // User operations (MANDATORY for Replit Auth)
+  // User operations - Standalone Auth
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(userData: Partial<User>): Promise<User>;
+  updateUserLoginStats(userId: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // Product operations
@@ -171,10 +174,54 @@ export class MemoryStorage implements IStorage {
     return this.users.get(id);
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(u => u.email === email);
+  }
+
+  async createUser(userData: Partial<User>): Promise<User> {
+    const user: User = {
+      id: this.generateId(),
+      email: userData.email || '',
+      passwordHash: userData.passwordHash,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      profileImageUrl: userData.profileImageUrl,
+      role: userData.role || 'customer',
+      isActive: true,
+      vehicleNumber: userData.vehicleNumber,
+      driverLicenseNumber: userData.driverLicenseNumber,
+      currentLatitude: null,
+      currentLongitude: null,
+      isAvailableForDelivery: false,
+      totalDeliveries: 0,
+      averageRating: null,
+      loyaltyPoints: 0,
+      loyaltyTier: 'bronze',
+      phoneNumber: userData.phoneNumber,
+      lastLoginAt: new Date(),
+      loginCount: 1,
+      preferences: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  async updateUserLoginStats(userId: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.lastLoginAt = new Date();
+      user.loginCount = (user.loginCount || 0) + 1;
+      this.users.set(userId, user);
+    }
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
     const user: User = {
       id: userData.id || this.generateId(),
-      email: userData.email,
+      email: userData.email || '',
+      passwordHash: userData.passwordHash,
       firstName: userData.firstName,
       lastName: userData.lastName,
       profileImageUrl: userData.profileImageUrl,
@@ -190,6 +237,9 @@ export class MemoryStorage implements IStorage {
       loyaltyPoints: userData.loyaltyPoints || 0,
       loyaltyTier: userData.loyaltyTier || 'bronze',
       phoneNumber: userData.phoneNumber,
+      lastLoginAt: null,
+      loginCount: 0,
+      preferences: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
