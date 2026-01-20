@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
+<<<<<<< HEAD
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+=======
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useAllProducts, useCreateProduct, useUpdateProduct, useAllOrders, useUpdateOrderStatus } from "@/hooks/useAdminAPI";
+>>>>>>> a378383 (Add files via upload)
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +33,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Package, ShoppingBag } from "lucide-react";
+<<<<<<< HEAD
 import type { Product, Order } from "@shared/schema";
+=======
+import type { Product } from "@shared/schema";
+>>>>>>> a378383 (Add files via upload)
 
 export default function Admin() {
   const { isAdmin, isLoading: isAuthLoading } = useAuth();
@@ -35,6 +45,7 @@ export default function Admin() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+<<<<<<< HEAD
   useEffect(() => {
     if (!isAuthLoading && !isAdmin) {
       toast({
@@ -113,6 +124,18 @@ export default function Admin() {
       });
     },
   });
+=======
+  const { data: products = [] } = useAllProducts() as { data: Product[] };
+  const { data: orders = [] } = useAllOrders() as { data: any[] };
+
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const updateOrderStatusMutation = useUpdateOrderStatus();
+
+  const handleToggleStock = (id: string, isAvailable: boolean) => {
+    updateProductMutation.mutate({ productId: id, data: { isAvailable } });
+  };
+>>>>>>> a378383 (Add files via upload)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -141,7 +164,11 @@ export default function Admin() {
     };
 
     if (editingProduct) {
+<<<<<<< HEAD
       updateProductMutation.mutate({ id: editingProduct.id, data });
+=======
+      updateProductMutation.mutate({ productId: editingProduct.id, data });
+>>>>>>> a378383 (Add files via upload)
     } else {
       createProductMutation.mutate(data);
     }
@@ -191,7 +218,11 @@ export default function Admin() {
                   <div>
                     <p className="text-sm text-muted-foreground">In Stock</p>
                     <p className="text-2xl font-bold" data-testid="stat-in-stock">
+<<<<<<< HEAD
                       {products.filter(p => p.isAvailable).length}
+=======
+                      {products.filter((p: Product) => p.isAvailable).length}
+>>>>>>> a378383 (Add files via upload)
                     </p>
                   </div>
                 </div>
@@ -281,7 +312,11 @@ export default function Admin() {
                             type="number"
                             min="1000"
                             max="5000"
+<<<<<<< HEAD
                             defaultValue={editingProduct?.pricePerGram}
+=======
+                            defaultValue={editingProduct?.pricePerGram || ""}
+>>>>>>> a378383 (Add files via upload)
                             required
                             data-testid="input-product-price"
                           />
@@ -293,7 +328,11 @@ export default function Admin() {
                             name="stockQuantity"
                             type="number"
                             min="0"
+<<<<<<< HEAD
                             defaultValue={editingProduct?.stockQuantity}
+=======
+                            defaultValue={editingProduct?.stockQuantity || ""}
+>>>>>>> a378383 (Add files via upload)
                             required
                             data-testid="input-product-stock"
                           />
@@ -322,7 +361,11 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4" data-testid="products-list">
+<<<<<<< HEAD
                 {products.map((product) => (
+=======
+                {products.map((product: Product) => (
+>>>>>>> a378383 (Add files via upload)
                   <div
                     key={product.id}
                     className="flex items-center justify-between rounded-lg border p-4 hover-elevate"
@@ -359,7 +402,11 @@ export default function Admin() {
                           id={`stock-${product.id}`}
                           checked={product.isAvailable}
                           onCheckedChange={(checked) =>
+<<<<<<< HEAD
                             toggleStockMutation.mutate({ id: product.id, isAvailable: checked })
+=======
+                            handleToggleStock(product.id, checked)
+>>>>>>> a378383 (Add files via upload)
                           }
                           data-testid={`switch-stock-${product.id}`}
                         />
@@ -389,7 +436,11 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4" data-testid="admin-orders-list">
+<<<<<<< HEAD
                 {orders.slice(0, 10).map((order) => (
+=======
+                {orders.slice(0, 10).map((order: any) => (
+>>>>>>> a378383 (Add files via upload)
                   <div
                     key={order.id}
                     className="flex items-center justify-between rounded-lg border p-4"
@@ -404,7 +455,11 @@ export default function Admin() {
                     <Select
                       value={order.status}
                       onValueChange={(status) =>
+<<<<<<< HEAD
                         updateOrderStatusMutation.mutate({ id: order.id, status })
+=======
+                        updateOrderStatusMutation.mutate({ orderId: order.id, status })
+>>>>>>> a378383 (Add files via upload)
                       }
                     >
                       <SelectTrigger className="w-40" data-testid={`select-order-status-${order.id}`}>

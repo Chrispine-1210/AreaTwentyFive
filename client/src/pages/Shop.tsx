@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -17,12 +18,30 @@ interface CartItemWithProduct extends CartItem {
 }
 
 export default function Shop() {
+=======
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useCustomerCart, useAddToCart, useUpdateCartItem, useRemoveFromCart, useCreateOrder } from "@/hooks/useCustomerAPI";
+import { useAllProducts } from "@/hooks/useAdminAPI";
+import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/Header";
+import { ProductCard } from "@/components/ProductCard";
+import { CartSheet } from "@/components/CartSheet";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search } from "lucide-react";
+import type { Product } from "@shared/schema";
+
+export default function Shop() {
+  const { user } = useAuth();
+>>>>>>> a378383 (Add files via upload)
   const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStrain, setSelectedStrain] = useState("all");
 
+<<<<<<< HEAD
   const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
@@ -115,13 +134,46 @@ export default function Shop() {
   });
 
   const filteredProducts = products.filter((product) => {
+=======
+  const { data: products = [], isLoading: isLoadingProducts } = useAllProducts() as { data: Product[], isLoading: boolean };
+  const { data: cartItems = [] } = useCustomerCart(user?.id) as { data: any[] };
+
+  const addToCartMutation = useAddToCart();
+  const updateCartMutation = useUpdateCartItem();
+  const removeFromCartMutation = useRemoveFromCart();
+  const checkoutMutation = useCreateOrder();
+
+  const handleAddToCart = (productId: string) => {
+    addToCartMutation.mutate({ productId, quantity: 1 }, {
+      onSuccess: () => {
+        toast({ title: "Added to cart", description: "Product successfully added" });
+      }
+    });
+  };
+
+  const handleCheckout = (location: string) => {
+    checkoutMutation.mutate({ deliveryLocation: location }, {
+      onSuccess: () => {
+        setIsCartOpen(false);
+        setDeliveryLocation("");
+        toast({ title: "Order placed!", description: "Track it in My Orders." });
+      }
+    });
+  };
+
+  const filteredProducts = products.filter((product: Product) => {
+>>>>>>> a378383 (Add files via upload)
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStrain = selectedStrain === "all" || product.strainType === selectedStrain;
     return matchesSearch && matchesStrain;
   });
 
+<<<<<<< HEAD
   const cartItemsForSheet = cartItems.map((item) => ({
+=======
+  const cartItemsForSheet = cartItems.map((item: any) => ({
+>>>>>>> a378383 (Add files via upload)
     id: item.id,
     productId: item.productId,
     productName: item.product?.name || "Product",
