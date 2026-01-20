@@ -103,5 +103,9 @@ export default {
       },
     },
   },
+<<<<<<< HEAD
   plugins: [],
+=======
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+>>>>>>> eba77d6 (Add files via upload)
 } satisfies Config;

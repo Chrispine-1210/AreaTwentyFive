@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "include": ["client/src/**/*", "shared/**", "server/**"],
+=======
+  "include": ["client/src/**/*", "shared/**/*", "server/**/*"],
+>>>>>>> eba77d6 (Add files via upload)
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "incremental": true,
