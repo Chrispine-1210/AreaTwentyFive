@@ -60,13 +60,11 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-<<<<<<< HEAD
-  const PORT = 5173;
+  const PORT = 5000;
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 })();
-=======
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
@@ -76,4 +74,7 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+<<<<<<< HEAD
 >>>>>>> eba77d6 (Add files via upload)
+=======
+>>>>>>> 756861f (new)
