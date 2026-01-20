@@ -1,45 +1,36 @@
-// Professional E-Commerce Platform - Storage Layer
-import {
-  type User,
-  type UpsertUser,
-  type Product,
-  type InsertProduct,
-  type Order,
-  type InsertOrder,
-  type OrderItem,
-  type InsertOrderItem,
-  type CartItem,
-  type InsertCartItem,
+// Professional E-Commerce Platform - Storage Layer with Roles Persistence
+import type {
+  User,
+  UpsertUser,
+  Product,
+  InsertProduct,
+  Order,
+  InsertOrder,
+  OrderItem,
+  InsertOrderItem,
+  CartItem,
+  InsertCartItem,
 } from "@shared/schema";
 
 export interface IStorage {
-  // User operations - Standalone Auth
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(userData: Partial<User>): Promise<User>;
   updateUserLoginStats(userId: string): Promise<void>;
   upsertUser(user: UpsertUser): Promise<User>;
-  
-  // Product operations
   getProducts(): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
-  
-  // Cart operations
   getCartItems(userId: string): Promise<(CartItem & { product?: Product })[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
   updateCartItem(id: string, quantity: number): Promise<CartItem | undefined>;
   removeCartItem(id: string): Promise<void>;
   clearCart(userId: string): Promise<void>;
-  
-  // Order operations
   createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order>;
   getOrders(userId: string): Promise<(Order & { orderItems?: OrderItem[] })[]>;
   getAllOrders(): Promise<(Order & { orderItems?: OrderItem[] })[]>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
-  
-  // Driver operations
   getAvailableDrivers(): Promise<User[]>;
   getDriverStats(driverId: string): Promise<any>;
   assignOrderToDriver(orderId: string, driverId: string): Promise<Order | undefined>;
@@ -48,33 +39,21 @@ export interface IStorage {
   updateDeliveryTracking(orderId: string, driverId: string, lat: string, lng: string, speed: number): Promise<void>;
   getDeliveryTracking(orderId: string): Promise<any[]>;
   setDriverAvailability(driverId: string, isAvailable: boolean): Promise<User | undefined>;
-  
-  // Loyalty Program operations
   getLoyaltyAccount(userId: string): Promise<any>;
   addLoyaltyPoints(userId: string, points: number): Promise<any>;
-  
-  // Payment operations
   createPaymentRecord(orderId: string, userId: string, amount: number, stripeIntentId?: string): Promise<any>;
   updatePaymentStatus(paymentId: string, status: string): Promise<any>;
-  
-  // Events operations
   getActiveEvents(): Promise<any[]>;
   createEvent(data: any): Promise<any>;
-  
-  // Inventory Alerts operations
   checkLowInventory(): Promise<any[]>;
   updateInventoryAlert(productId: string, currentStock: number): Promise<void>;
-  
-  // Notification Log operations
   logNotification(data: any): Promise<any>;
-  
-  // Analytics operations
   getOrCreateDailySummary(date: string): Promise<any>;
   updateAnalyticsSummary(date: string, data: any): Promise<any>;
   getAnalyticsSummary(days: number): Promise<any[]>;
 }
 
-// In-Memory Storage for Testing
+// In-Memory Storage with Role Persistence
 export class MemoryStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private products: Map<string, Product> = new Map();
@@ -93,11 +72,10 @@ export class MemoryStorage implements IStorage {
   }
 
   private generateId(): string {
-    return `test_${++this.nextId}`;
+    return `user_${++this.nextId}`;
   }
 
   private initializeTestData() {
-    // Test Products - Flowers
     const flower1: Product = {
       id: 'prod_1',
       name: 'Premium Indica Flower',
@@ -128,7 +106,6 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
 
-    // Test Products - Pre-rolls
     const preroll1: Product = {
       id: 'prod_3',
       name: 'Mini Pre-Roll Pack',
@@ -166,10 +143,9 @@ export class MemoryStorage implements IStorage {
     this.products.set(preroll1.id, preroll1);
     this.products.set(preroll2.id, preroll2);
 
-    console.log('✅ In-Memory Storage initialized with test products');
+    console.log('✅ In-Memory Storage initialized with test products and role persistence');
   }
 
-  // User operations
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -205,6 +181,7 @@ export class MemoryStorage implements IStorage {
       updatedAt: new Date(),
     };
     this.users.set(user.id, user);
+    console.log(`✅ User created with role: ${user.role}`);
     return user;
   }
 
@@ -247,7 +224,6 @@ export class MemoryStorage implements IStorage {
     return user;
   }
 
-  // Product operations
   async getProducts(): Promise<Product[]> {
     return Array.from(this.products.values());
   }
@@ -275,7 +251,6 @@ export class MemoryStorage implements IStorage {
     return updated;
   }
 
-  // Cart operations
   async getCartItems(userId: string): Promise<(CartItem & { product?: Product })[]> {
     const items = Array.from(this.cartItems.values()).filter(item => item.userId === userId);
     return items.map(item => ({
@@ -314,7 +289,6 @@ export class MemoryStorage implements IStorage {
     });
   }
 
-  // Order operations
   async createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order> {
     const newOrder: Order = {
       id: this.generateId(),
@@ -359,7 +333,6 @@ export class MemoryStorage implements IStorage {
     return order;
   }
 
-  // Driver operations
   async getAvailableDrivers(): Promise<User[]> {
     return Array.from(this.users.values()).filter(u => u.role === 'driver' && u.isAvailableForDelivery);
   }
@@ -415,7 +388,6 @@ export class MemoryStorage implements IStorage {
     return driver;
   }
 
-  // Loyalty Program operations
   async getLoyaltyAccount(userId: string): Promise<any> {
     return this.loyaltyProgram.get(userId) || { userId, points: 0, totalSpent: 0, tier: 'bronze' };
   }
@@ -427,7 +399,6 @@ export class MemoryStorage implements IStorage {
     return account;
   }
 
-  // Payment operations
   async createPaymentRecord(orderId: string, userId: string, amount: number, stripeIntentId?: string): Promise<any> {
     const record = { id: this.generateId(), orderId, userId, amount, stripePaymentIntentId: stripeIntentId, status: 'pending' };
     this.paymentRecords.set(record.id, record);
@@ -440,7 +411,6 @@ export class MemoryStorage implements IStorage {
     return record;
   }
 
-  // Events operations
   async getActiveEvents(): Promise<any[]> {
     return Array.from(this.events.values()).filter(e => e.isActive);
   }
@@ -451,22 +421,17 @@ export class MemoryStorage implements IStorage {
     return event;
   }
 
-  // Inventory Alerts operations
   async checkLowInventory(): Promise<any[]> {
     return [];
   }
 
-  async updateInventoryAlert(productId: string, currentStock: number): Promise<void> {
-    // noop
-  }
+  async updateInventoryAlert(productId: string, currentStock: number): Promise<void> {}
 
-  // Notification Log operations
   async logNotification(data: any): Promise<any> {
     this.notifications.push(data);
     return data;
   }
 
-  // Analytics operations
   async getOrCreateDailySummary(date: string): Promise<any> {
     return { date, totalOrders: 0, totalRevenue: 0 };
   }
@@ -480,5 +445,4 @@ export class MemoryStorage implements IStorage {
   }
 }
 
-// Use MemoryStorage for testing
 export const storage = new MemoryStorage();

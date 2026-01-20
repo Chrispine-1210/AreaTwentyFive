@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import type { Express, RequestHandler } from "express";
 import { storage } from "./storage";
 import { type User, registerUserSchema, loginUserSchema } from "@shared/schema";
+export { isAuthenticated, isAdmin, isDriver } from "./middleware/roleAuth";
 
 const SALT_ROUNDS = 12;
 
@@ -215,39 +216,3 @@ export async function setupAuth(app: Express) {
     });
   });
 }
-
-// Middleware: Check if authenticated
-export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated() && req.user) {
-    return next();
-  }
-  res.status(401).json({ message: "Unauthorized" });
-};
-
-// Middleware: Check if admin
-export const isAdmin: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  
-  const user = req.user as User;
-  if (user.role !== "admin") {
-    return res.status(403).json({ message: "Forbidden: Admin access required" });
-  }
-  
-  next();
-};
-
-// Middleware: Check if driver
-export const isDriver: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  
-  const user = req.user as User;
-  if (user.role !== "driver") {
-    return res.status(403).json({ message: "Forbidden: Driver access required" });
-  }
-  
-  next();
-};
