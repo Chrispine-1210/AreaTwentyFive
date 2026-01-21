@@ -3,8 +3,9 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MapPin, Package, Truck, CheckCircle, Clock } from "lucide-react";
+import { MapPin, Package, Truck, CheckCircle, Clock, Navigation } from "lucide-react";
 import type { Order, OrderItem } from "@shared/schema";
+import { useOrderTracking } from "@/hooks/useCustomerAPI";
 
 interface OrderWithItems extends Order {
   orderItems?: OrderItem[];
@@ -67,88 +68,118 @@ export default function Orders() {
             </Card>
           ) : (
             <div className="space-y-6" data-testid="orders-list">
-              {orders.map((order) => {
-                const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending;
-                const StatusIcon = statusInfo.icon;
-
-                return (
-                  <Card key={order.id} className="hover-elevate" data-testid={`order-${order.id}`}>
-                    <CardHeader>
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="font-heading text-xl">
-                            Order #{order.id.slice(0, 8)}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(order.createdAt!).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </p>
-                        </div>
-                        <Badge className={statusInfo.color} data-testid={`badge-status-${order.id}`}>
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {statusInfo.label}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      {/* Order Items */}
-                      <div className="space-y-2">
-                        <h4 className="font-medium text-sm text-muted-foreground">Items</h4>
-                        <div className="space-y-2">
-                          {order.orderItems?.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center justify-between rounded-md bg-muted/50 p-3"
-                              data-testid={`order-item-${item.id}`}
-                            >
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">{item.productName}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {item.quantity}g × MWK {item.pricePerGram.toLocaleString()}
-                                </p>
-                              </div>
-                              <p className="font-accent font-semibold">
-                                MWK {item.subtotal.toLocaleString()}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Delivery Location */}
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">Delivery Location</p>
-                          <p className="text-sm text-muted-foreground" data-testid={`text-location-${order.id}`}>
-                            {order.deliveryLocation}
-                          </p>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Total */}
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">Total</span>
-                        <span className="font-accent text-xl font-semibold text-accent" data-testid={`text-total-${order.id}`}>
-                          MWK {order.totalAmount.toLocaleString()}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} statusConfig={statusConfig} />
+              ))}
             </div>
           )}
         </div>
       </main>
     </div>
+  );
+}
+
+function OrderCard({ order, statusConfig }: { order: OrderWithItems, statusConfig: any }) {
+  const { data: tracking } = useOrderTracking(order.id) as { data: any };
+  const statusInfo = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending;
+  const StatusIcon = statusInfo.icon;
+
+  return (
+    <Card className="hover-elevate" data-testid={`order-${order.id}`}>
+      <CardHeader>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle className="font-heading text-xl">
+              Order #{order.id.slice(0, 8)}
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {new Date(order.createdAt!).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          <Badge className={statusInfo.color} data-testid={`badge-status-${order.id}`}>
+            <StatusIcon className="mr-1 h-3 w-3" />
+            {statusInfo.label}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Live Tracking for Out for Delivery */}
+        {order.status === "out_for_delivery" && tracking?.currentLocation && (
+          <div className="bg-primary/10 rounded-lg p-4 border border-primary/20 animate-pulse">
+            <div className="flex items-center gap-2 mb-3">
+              <Navigation className="h-5 w-5 text-primary" />
+              <h4 className="font-semibold text-primary">Live Driver Location</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Coordinates</p>
+                <p className="font-medium">{tracking.currentLocation.latitude}, {tracking.currentLocation.longitude}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Speed</p>
+                <p className="font-medium">{Math.round(tracking.currentLocation.speed || 0)} km/h</p>
+              </div>
+              {tracking.driverName && (
+                <div className="col-span-2 border-t pt-2">
+                  <p className="text-muted-foreground">Driver: <span className="text-foreground font-medium">{tracking.driverName}</span></p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Order Items */}
+        <div className="space-y-2">
+          <h4 className="font-medium text-sm text-muted-foreground">Items</h4>
+          <div className="space-y-2">
+            {order.orderItems?.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded-md bg-muted/50 p-3"
+                data-testid={`order-item-${item.id}`}
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{item.productName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.quantity}g × MWK {item.pricePerGram.toLocaleString()}
+                  </p>
+                </div>
+                <p className="font-accent font-semibold">
+                  MWK {item.subtotal.toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Delivery Location */}
+        <div className="flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium">Delivery Location</p>
+            <p className="text-sm text-muted-foreground" data-testid={`text-location-${order.id}`}>
+              {order.deliveryLocation}
+            </p>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Total */}
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Total</span>
+          <span className="font-accent text-xl font-semibold text-accent" data-testid={`text-total-${order.id}`}>
+            MWK {order.totalAmount.toLocaleString()}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

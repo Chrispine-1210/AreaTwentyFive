@@ -1,29 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-<<<<<<< HEAD
-=======
-import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
->>>>>>> eba77d6 (Add files via upload)
 
 export default defineConfig({
   plugins: [
     react(),
-<<<<<<< HEAD
-=======
-    runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== "production" &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import("@replit/vite-plugin-cartographer").then((m) =>
-            m.cartographer(),
-          ),
-          await import("@replit/vite-plugin-dev-banner").then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
->>>>>>> eba77d6 (Add files via upload)
   ],
   resolve: {
     alias: {

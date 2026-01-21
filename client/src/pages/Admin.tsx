@@ -1,14 +1,7 @@
 import { useEffect, useState } from "react";
-<<<<<<< HEAD
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-=======
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useAllProducts, useCreateProduct, useUpdateProduct, useAllOrders, useUpdateOrderStatus } from "@/hooks/useAdminAPI";
->>>>>>> a378383 (Add files via upload)
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,11 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Pencil, Package, ShoppingBag } from "lucide-react";
-<<<<<<< HEAD
-import type { Product, Order } from "@shared/schema";
-=======
 import type { Product } from "@shared/schema";
->>>>>>> a378383 (Add files via upload)
 
 export default function Admin() {
   const { isAdmin, isLoading: isAuthLoading } = useAuth();
@@ -45,86 +34,6 @@ export default function Admin() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    if (!isAuthLoading && !isAdmin) {
-      toast({
-        title: "Unauthorized",
-        description: "You don't have admin access",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
-    }
-  }, [isAdmin, isAuthLoading, toast]);
-
-  const { data: products = [] } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
-  });
-
-  const { data: orders = [] } = useQuery<Order[]>({
-    queryKey: ["/api/admin/orders"],
-  });
-
-  const createProductMutation = useMutation({
-    mutationFn: async (data: any) => {
-      await apiRequest("POST", "/api/products", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      setIsDialogOpen(false);
-      toast({
-        title: "Product created",
-        description: "Product has been added successfully",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create product",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateProductMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      await apiRequest("PATCH", `/api/products/${id}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      setIsDialogOpen(false);
-      setEditingProduct(null);
-      toast({
-        title: "Product updated",
-        description: "Product has been updated successfully",
-      });
-    },
-  });
-
-  const toggleStockMutation = useMutation({
-    mutationFn: async ({ id, isAvailable }: { id: string; isAvailable: boolean }) => {
-      await apiRequest("PATCH", `/api/products/${id}`, { isAvailable });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-    },
-  });
-
-  const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      await apiRequest("PATCH", `/api/orders/${id}`, { status });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
-      toast({
-        title: "Order updated",
-        description: "Order status has been updated",
-      });
-    },
-  });
-=======
   const { data: products = [] } = useAllProducts() as { data: Product[] };
   const { data: orders = [] } = useAllOrders() as { data: any[] };
 
@@ -135,7 +44,6 @@ export default function Admin() {
   const handleToggleStock = (id: string, isAvailable: boolean) => {
     updateProductMutation.mutate({ productId: id, data: { isAvailable } });
   };
->>>>>>> a378383 (Add files via upload)
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -152,26 +60,27 @@ export default function Admin() {
     if (productType === "flower") {
       data.strainType = formData.get("strainType") as string;
       data.pricePerGram = parseInt(formData.get("pricePerGram") as string);
+      data.size = null;
+      data.totalPrice = null;
     } else if (productType === "preroll") {
       data.size = formData.get("size") as string;
       data.totalPrice = parseInt(formData.get("totalPrice") as string);
+      data.strainType = null;
+      data.pricePerGram = null;
     }
 
     const submitData = {
       ...data,
-      imageUrl: formData.get("imageUrl") as string,
+      imageUrl: formData.get("imageUrl") as string || null,
       isAvailable: true,
     };
 
     if (editingProduct) {
-<<<<<<< HEAD
-      updateProductMutation.mutate({ id: editingProduct.id, data });
-=======
-      updateProductMutation.mutate({ productId: editingProduct.id, data });
->>>>>>> a378383 (Add files via upload)
+      updateProductMutation.mutate({ productId: editingProduct.id, data: submitData });
     } else {
-      createProductMutation.mutate(data);
+      createProductMutation.mutate(submitData);
     }
+    setIsDialogOpen(false);
   };
 
   if (isAuthLoading || !isAdmin) {
@@ -218,11 +127,7 @@ export default function Admin() {
                   <div>
                     <p className="text-sm text-muted-foreground">In Stock</p>
                     <p className="text-2xl font-bold" data-testid="stat-in-stock">
-<<<<<<< HEAD
-                      {products.filter(p => p.isAvailable).length}
-=======
                       {products.filter((p: Product) => p.isAvailable).length}
->>>>>>> a378383 (Add files via upload)
                     </p>
                   </div>
                 </div>
@@ -278,15 +183,32 @@ export default function Admin() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="strainType">Strain Type</Label>
-                          <Select name="strainType" defaultValue={editingProduct?.strainType || "Hybrid"} required>
-                            <SelectTrigger data-testid="select-strain-type">
+                          <Label htmlFor="productType">Product Type</Label>
+                          <Select 
+                            name="productType" 
+                            defaultValue={editingProduct?.productType || "flower"} 
+                            required
+                            onValueChange={(v) => {
+                              const form = document.querySelector("form") as HTMLFormElement;
+                              if (form) {
+                                const flowerFields = form.querySelector("#flower-fields") as HTMLElement;
+                                const prerollFields = form.querySelector("#preroll-fields") as HTMLElement;
+                                if (v === "flower") {
+                                  if (flowerFields) flowerFields.style.display = "grid";
+                                  if (prerollFields) prerollFields.style.display = "none";
+                                } else {
+                                  if (flowerFields) flowerFields.style.display = "none";
+                                  if (prerollFields) prerollFields.style.display = "grid";
+                                }
+                              }
+                            }}
+                          >
+                            <SelectTrigger data-testid="select-product-type">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Indica">Indica</SelectItem>
-                              <SelectItem value="Sativa">Sativa</SelectItem>
-                              <SelectItem value="Hybrid">Hybrid</SelectItem>
+                              <SelectItem value="flower">Flower</SelectItem>
+                              <SelectItem value="preroll">Pre-Roll</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -303,7 +225,20 @@ export default function Admin() {
                         />
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div id="flower-fields" className="grid gap-4 md:grid-cols-2" style={{ display: editingProduct?.productType === 'preroll' ? 'none' : 'grid' }}>
+                        <div className="space-y-2">
+                          <Label htmlFor="strainType">Strain Type</Label>
+                          <Select name="strainType" defaultValue={editingProduct?.strainType || "Hybrid"}>
+                            <SelectTrigger data-testid="select-strain-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Indica">Indica</SelectItem>
+                              <SelectItem value="Sativa">Sativa</SelectItem>
+                              <SelectItem value="Hybrid">Hybrid</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="pricePerGram">Price per Gram (MWK)</Label>
                           <Input
@@ -312,31 +247,47 @@ export default function Admin() {
                             type="number"
                             min="1000"
                             max="5000"
-<<<<<<< HEAD
-                            defaultValue={editingProduct?.pricePerGram}
-=======
                             defaultValue={editingProduct?.pricePerGram || ""}
->>>>>>> a378383 (Add files via upload)
-                            required
                             data-testid="input-product-price"
                           />
                         </div>
+                      </div>
+
+                      <div id="preroll-fields" className="grid gap-4 md:grid-cols-2" style={{ display: editingProduct?.productType === 'preroll' ? 'grid' : 'none' }}>
                         <div className="space-y-2">
-                          <Label htmlFor="stockQuantity">Stock Quantity (grams)</Label>
+                          <Label htmlFor="size">Size (mg)</Label>
                           <Input
-                            id="stockQuantity"
-                            name="stockQuantity"
-                            type="number"
-                            min="0"
-<<<<<<< HEAD
-                            defaultValue={editingProduct?.stockQuantity}
-=======
-                            defaultValue={editingProduct?.stockQuantity || ""}
->>>>>>> a378383 (Add files via upload)
-                            required
-                            data-testid="input-product-stock"
+                            id="size"
+                            name="size"
+                            placeholder="500 or 1000"
+                            defaultValue={editingProduct?.size || ""}
+                            data-testid="input-product-size"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="totalPrice">Total Price (MWK)</Label>
+                          <Input
+                            id="totalPrice"
+                            name="totalPrice"
+                            type="number"
+                            min="500"
+                            defaultValue={editingProduct?.totalPrice || ""}
+                            data-testid="input-product-total-price"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="stockQuantity">Stock Quantity</Label>
+                        <Input
+                          id="stockQuantity"
+                          name="stockQuantity"
+                          type="number"
+                          min="0"
+                          defaultValue={editingProduct?.stockQuantity || ""}
+                          required
+                          data-testid="input-product-stock"
+                        />
                       </div>
 
                       <div className="space-y-2">
@@ -361,11 +312,7 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4" data-testid="products-list">
-<<<<<<< HEAD
-                {products.map((product) => (
-=======
                 {products.map((product: Product) => (
->>>>>>> a378383 (Add files via upload)
                   <div
                     key={product.id}
                     className="flex items-center justify-between rounded-lg border p-4 hover-elevate"
@@ -384,10 +331,10 @@ export default function Admin() {
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">{product.strainType}</Badge>
                           <span className="text-sm text-muted-foreground">
-                            MWK {product.pricePerGram.toLocaleString()}/g
+                            MWK {product.pricePerGram?.toLocaleString() || 0}/g
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            • {product.stockQuantity}g
+                            • {product.stockQuantity || 0}g
                           </span>
                         </div>
                       </div>
@@ -402,11 +349,7 @@ export default function Admin() {
                           id={`stock-${product.id}`}
                           checked={product.isAvailable}
                           onCheckedChange={(checked) =>
-<<<<<<< HEAD
-                            toggleStockMutation.mutate({ id: product.id, isAvailable: checked })
-=======
                             handleToggleStock(product.id, checked)
->>>>>>> a378383 (Add files via upload)
                           }
                           data-testid={`switch-stock-${product.id}`}
                         />
@@ -436,11 +379,7 @@ export default function Admin() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4" data-testid="admin-orders-list">
-<<<<<<< HEAD
-                {orders.slice(0, 10).map((order) => (
-=======
                 {orders.slice(0, 10).map((order: any) => (
->>>>>>> a378383 (Add files via upload)
                   <div
                     key={order.id}
                     className="flex items-center justify-between rounded-lg border p-4"
@@ -449,17 +388,13 @@ export default function Admin() {
                     <div>
                       <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
                       <p className="text-sm text-muted-foreground">
-                        MWK {order.totalAmount.toLocaleString()} • {order.deliveryLocation}
+                        MWK {order.totalAmount?.toLocaleString() || 0} • {order.deliveryLocation}
                       </p>
                     </div>
                     <Select
                       value={order.status}
                       onValueChange={(status) =>
-<<<<<<< HEAD
-                        updateOrderStatusMutation.mutate({ id: order.id, status })
-=======
                         updateOrderStatusMutation.mutate({ orderId: order.id, status })
->>>>>>> a378383 (Add files via upload)
                       }
                     >
                       <SelectTrigger className="w-40" data-testid={`select-order-status-${order.id}`}>

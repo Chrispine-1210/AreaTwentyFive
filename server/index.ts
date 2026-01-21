@@ -65,16 +65,4 @@ app.use((req, res, next) => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 })();
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
-<<<<<<< HEAD
->>>>>>> eba77d6 (Add files via upload)
-=======
->>>>>>> 756861f (new)
+  

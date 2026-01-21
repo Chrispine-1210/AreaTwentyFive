@@ -200,11 +200,7 @@ export async function setupAuth(app: Express) {
   // Get current user endpoint
   app.get("/api/auth/user", (req, res) => {
     if (!req.isAuthenticated() || !req.user) {
-<<<<<<< HEAD
       return res.json(null);
-=======
-      return res.status(401).json({ message: "Unauthorized" });
->>>>>>> eba77d6 (Add files via upload)
     }
     const user = req.user as User;
     res.json({

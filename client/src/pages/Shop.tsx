@@ -1,24 +1,3 @@
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import { Header } from "@/components/Header";
-import { ProductCard } from "@/components/ProductCard";
-import { CartSheet } from "@/components/CartSheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Product, CartItem } from "@shared/schema";
-import { Search } from "lucide-react";
-
-interface CartItemWithProduct extends CartItem {
-  product?: Product;
-}
-
-export default function Shop() {
-=======
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCustomerCart, useAddToCart, useUpdateCartItem, useRemoveFromCart, useCreateOrder } from "@/hooks/useCustomerAPI";
@@ -34,107 +13,12 @@ import type { Product } from "@shared/schema";
 
 export default function Shop() {
   const { user } = useAuth();
->>>>>>> a378383 (Add files via upload)
   const { toast } = useToast();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryLocation, setDeliveryLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStrain, setSelectedStrain] = useState("all");
 
-<<<<<<< HEAD
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
-    queryKey: ["/api/products"],
-  });
-
-  const { data: cartItems = [] } = useQuery<CartItemWithProduct[]>({
-    queryKey: ["/api/cart"],
-  });
-
-  const addToCartMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      await apiRequest("POST", "/api/cart", { productId, quantity: 1 });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Added to cart",
-        description: "Product successfully added to your cart",
-      });
-    },
-    onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add to cart",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const updateCartMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      await apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update cart",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const removeFromCartMutation = useMutation({
-    mutationFn: async (itemId: string) => {
-      await apiRequest("DELETE", `/api/cart/${itemId}`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Removed from cart",
-        description: "Product removed from your cart",
-      });
-    },
-  });
-
-  const checkoutMutation = useMutation({
-    mutationFn: async (location: string) => {
-      await apiRequest("POST", "/api/orders", { deliveryLocation: location });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-      setIsCartOpen(false);
-      setDeliveryLocation("");
-      toast({
-        title: "Order placed successfully!",
-        description: "Your order is being processed. Check My Orders for tracking.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Checkout failed",
-        description: error.message || "Failed to place order",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const filteredProducts = products.filter((product) => {
-=======
   const { data: products = [], isLoading: isLoadingProducts } = useAllProducts() as { data: Product[], isLoading: boolean };
   const { data: cartItems = [] } = useCustomerCart(user?.id) as { data: any[] };
 
@@ -162,18 +46,13 @@ export default function Shop() {
   };
 
   const filteredProducts = products.filter((product: Product) => {
->>>>>>> a378383 (Add files via upload)
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStrain = selectedStrain === "all" || product.strainType === selectedStrain;
     return matchesSearch && matchesStrain;
   });
 
-<<<<<<< HEAD
-  const cartItemsForSheet = cartItems.map((item) => ({
-=======
   const cartItemsForSheet = cartItems.map((item: any) => ({
->>>>>>> a378383 (Add files via upload)
     id: item.id,
     productId: item.productId,
     productName: item.product?.name || "Product",

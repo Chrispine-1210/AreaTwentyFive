@@ -1,15 +1,7 @@
-<<<<<<< HEAD
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-=======
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useDriverDeliveries, useUpdateDriverLocation, useAcceptDelivery, useSetDriverAvailability, useDriverStats } from "@/hooks/useDriverAPI";
->>>>>>> a378383 (Add files via upload)
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,69 +13,6 @@ export default function DriverDashboard() {
   const { toast } = useToast();
   const [isTrackingLocation, setIsTrackingLocation] = useState(false);
 
-<<<<<<< HEAD
-  useEffect(() => {
-    if (!authLoading && user?.role !== "driver") {
-      window.location.href = "/";
-    }
-  }, [user, authLoading]);
-
-  const { data: stats = {} } = useQuery({
-    queryKey: ["/api/driver/stats"],
-  });
-
-  const { data: deliveries = [] } = useQuery({
-    queryKey: ["/api/driver/deliveries"],
-  });
-
-  const updateLocationMutation = useMutation({
-    mutationFn: async () => {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            apiRequest("POST", "/api/driver/location", {
-              latitude: position.coords.latitude.toString(),
-              longitude: position.coords.longitude.toString(),
-              speed: position.coords.speed || 0,
-            }).then(resolve).catch(reject);
-          },
-          (error) => reject(error)
-        );
-      });
-    },
-    onSuccess: () => {
-      toast({ title: "Location updated", description: "Your location has been sent to dispatch" });
-    },
-    onError: () => {
-      toast({
-        title: "Location error",
-        description: "Could not get your location",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const toggleAvailability = useMutation({
-    mutationFn: async (isAvailable: boolean) => {
-      await apiRequest("PATCH", "/api/driver/availability", { isAvailable });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/driver/stats"] });
-    },
-  });
-
-  const acceptDelivery = useMutation({
-    mutationFn: async (orderId: string) => {
-      await apiRequest("POST", `/api/driver/accept/${orderId}`, {});
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/driver/deliveries"] });
-      toast({ title: "Order accepted", description: "You've accepted this delivery" });
-      setIsTrackingLocation(true);
-      updateLocationMutation.mutate();
-    },
-  });
-=======
   const { data: stats = {} } = useDriverStats(user?.id) as { data: any };
   const { data: deliveries = [] } = useDriverDeliveries(user?.id) as { data: any[] };
 
@@ -105,31 +34,20 @@ export default function DriverDashboard() {
       }
     );
   };
->>>>>>> a378383 (Add files via upload)
 
   const startTracking = () => {
     setIsTrackingLocation(true);
     const interval = setInterval(() => {
-<<<<<<< HEAD
-      updateLocationMutation.mutate();
-=======
       handleUpdateLocation();
->>>>>>> a378383 (Add files via upload)
     }, 10000); // Update every 10 seconds
     return () => clearInterval(interval);
   };
 
   if (authLoading) return null;
 
-<<<<<<< HEAD
-  const availableDeliveries = deliveries.filter(d => d.status === "pending");
-  const activeDeliveries = deliveries.filter(d => d.status === "out_for_delivery" || d.status === "assigned");
-  const completedDeliveries = deliveries.filter(d => d.status === "completed");
-=======
   const availableDeliveries = deliveries.filter((d: any) => d.status === "pending");
   const activeDeliveries = deliveries.filter((d: any) => d.status === "out_for_delivery" || d.status === "assigned");
   const completedDeliveries = deliveries.filter((d: any) => d.status === "completed");
->>>>>>> a378383 (Add files via upload)
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,11 +78,7 @@ export default function DriverDashboard() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total Deliveries</p>
-<<<<<<< HEAD
-                    <p className="text-2xl font-bold">{stats.totalDeliveries}</p>
-=======
                     <p className="text-2xl font-bold">{stats.totalDeliveries || 0}</p>
->>>>>>> a378383 (Add files via upload)
                   </div>
                 </div>
               </CardContent>
@@ -192,11 +106,7 @@ export default function DriverDashboard() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Rating</p>
-<<<<<<< HEAD
-                    <p className="text-2xl font-bold">{stats.averageRating}</p>
-=======
                     <p className="text-2xl font-bold">{stats.averageRating || 0}</p>
->>>>>>> a378383 (Add files via upload)
                   </div>
                 </div>
               </CardContent>
@@ -211,11 +121,7 @@ export default function DriverDashboard() {
                   <CardTitle className="font-heading text-2xl">Active Deliveries</CardTitle>
                   <Button
                     size="sm"
-<<<<<<< HEAD
-                    onClick={() => updateLocationMutation.mutate()}
-=======
                     onClick={() => handleUpdateLocation()}
->>>>>>> a378383 (Add files via upload)
                     data-testid="button-update-location"
                   >
                     <MapPin className="mr-2 h-4 w-4" />
@@ -225,11 +131,7 @@ export default function DriverDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-<<<<<<< HEAD
-                  {activeDeliveries.map((delivery) => (
-=======
                   {activeDeliveries.map((delivery: any) => (
->>>>>>> a378383 (Add files via upload)
                     <div key={delivery.id} className="flex items-center justify-between border-l-4 border-l-primary p-4 bg-card rounded-lg">
                       <div>
                         <h3 className="font-medium">Order #{delivery.id.slice(0, 8)}</h3>
@@ -254,11 +156,7 @@ export default function DriverDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-<<<<<<< HEAD
-                  {availableDeliveries.map((delivery) => (
-=======
                   {availableDeliveries.map((delivery: any) => (
->>>>>>> a378383 (Add files via upload)
                     <div key={delivery.id} className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
                       <div>
                         <h3 className="font-medium">Order #{delivery.id.slice(0, 8)}</h3>
@@ -289,11 +187,7 @@ export default function DriverDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-<<<<<<< HEAD
-                  {completedDeliveries.slice(0, 5).map((delivery) => (
-=======
                   {completedDeliveries.slice(0, 5).map((delivery: any) => (
->>>>>>> a378383 (Add files via upload)
                     <div key={delivery.id} className="flex items-center justify-between p-4 border rounded-lg opacity-60">
                       <div>
                         <h3 className="font-medium">Order #{delivery.id.slice(0, 8)}</h3>
