@@ -10,6 +10,9 @@ import type {
   InsertOrderItem,
   CartItem,
   InsertCartItem,
+  Message,
+  InsertMessage,
+  OrderEvent,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -69,6 +72,7 @@ export class MemoryStorage implements IStorage {
   private paymentRecords: Map<string, any> = new Map();
   private events: Map<string, any> = new Map();
   private messages: Map<string, Message> = new Map();
+  private orderEvents: Map<string, OrderEvent> = new Map();
   private notifications: any[] = [];
   private nextId = 0;
 
@@ -270,6 +274,7 @@ export class MemoryStorage implements IStorage {
     const cartItem: CartItem = {
       id: this.generateId(),
       ...item,
+      quantity: item.quantity ?? 1,
       createdAt: new Date(),
     };
     this.cartItems.set(cartItem.id, cartItem);
@@ -316,18 +321,24 @@ export class MemoryStorage implements IStorage {
     return newOrder;
   }
 
-  async getOrders(userId: string): Promise<(Order & { orderItems?: OrderItem[] })[]> {
+  async getOrders(userId: string): Promise<(Order & { orderItems?: OrderItem[], events?: OrderEvent[] })[]> {
     const userOrders = Array.from(this.orders.values()).filter(o => o.userId === userId);
     return userOrders.map(order => ({
       ...order,
       orderItems: Array.from(this.orderItems.values()).filter(item => item.orderId === order.id),
+      events: Array.from(this.orderEvents.values())
+        .filter(e => e.orderId === order.id)
+        .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)),
     }));
   }
 
-  async getAllOrders(): Promise<(Order & { orderItems?: OrderItem[] })[]> {
+  async getAllOrders(): Promise<(Order & { orderItems?: OrderItem[], events?: OrderEvent[] })[]> {
     return Array.from(this.orders.values()).map(order => ({
       ...order,
       orderItems: Array.from(this.orderItems.values()).filter(item => item.orderId === order.id),
+      events: Array.from(this.orderEvents.values())
+        .filter(e => e.orderId === order.id)
+        .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)),
     }));
   }
 
@@ -337,6 +348,18 @@ export class MemoryStorage implements IStorage {
     order.status = status;
     order.updatedAt = new Date();
     this.orders.set(id, order);
+
+    // Create tracking event
+    const eventId = `event_${++this.nextId}`;
+    this.orderEvents.set(eventId, {
+      id: eventId,
+      orderId: id,
+      status,
+      description: `Order status updated to ${status.replace(/_/g, ' ')}`,
+      location: order.deliveryLocation,
+      createdAt: new Date(),
+    });
+
     return order;
   }
 

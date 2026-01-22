@@ -289,9 +289,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.get("/api/chat", isAuthenticated, async (req: any, res) => {
     try {
-      const { orderId, role } = req.query;
+      const { orderId, role, receiverId } = req.query;
       const messages = await storage.getMessages(orderId as string, role as string);
-      res.json(messages);
+      
+      // If admin, show all messages for the order
+      // If customer/driver, only show relevant ones
+      let filteredMessages = messages;
+      if (req.user.role !== 'admin') {
+        filteredMessages = messages.filter(m => 
+          m.senderId === req.user.id || 
+          m.receiverId === req.user.id || 
+          m.role === 'admin'
+        );
+      }
+      
+      res.json(filteredMessages);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch messages" });
     }

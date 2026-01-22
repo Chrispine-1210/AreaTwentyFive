@@ -158,6 +158,14 @@ export async function notifyOrderStatusChange(
   const message = statusMessages[status] || `Your order status: ${status}`;
   const subject = `Order Update - Status: ${status}`;
 
+  // Add system message to chat for real-time customer view
+  await storage.createMessage({
+    senderId: "system",
+    content: message,
+    orderId,
+    receiverId: userId,
+  }).catch(e => console.error('Failed to create system message:', e));
+
   const promises = [];
 
   if (phoneNumber) {

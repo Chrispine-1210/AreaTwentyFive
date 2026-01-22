@@ -178,24 +178,40 @@ export const insertCartItemSchema = createInsertSchema(cartItems).omit({
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type CartItem = typeof cartItems.$inferSelect;
 
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  orders: many(orders),
-  cartItems: many(cartItems),
-}));
+// Order tracking events for detailed timeline
+export const orderEvents = pgTable("order_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  status: varchar("status", { length: 50 }).notNull(),
+  description: text("description").notNull(),
+  location: text("location"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
-export const productsRelations = relations(products, ({ many }) => ({
-  orderItems: many(orderItems),
-  cartItems: many(cartItems),
-}));
+export const insertOrderEventSchema = createInsertSchema(orderEvents).omit({
+  id: true,
+  createdAt: true,
+});
 
+export type OrderEvent = typeof orderEvents.$inferSelect;
+
+// Relations update
 export const ordersRelations = relations(orders, ({ one, many }) => ({
   user: one(users, {
     fields: [orders.userId],
     references: [users.id],
   }),
   orderItems: many(orderItems),
+  events: many(orderEvents),
 }));
+
+export const orderEventsRelations = relations(orderEvents, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderEvents.orderId],
+    references: [orders.id],
+  }),
+}));
+
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   order: one(orders, {
@@ -312,58 +328,35 @@ export const analyticsSummary = pgTable("analytics_summary", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Update orders table to include payment status
-export const ordersExtended = pgTable("orders_extended", {
-  orderId: varchar("order_id").primaryKey().references(() => orders.id, { onDelete: 'cascade' }),
-  paymentStatus: varchar("payment_status", { length: 50 }).default("pending").notNull(), // pending, paid, failed
-  paymentMethod: varchar("payment_method", { length: 50 }),
-  loyaltyPointsEarned: integer("loyalty_points_earned").default(0),
+// Messages table for real-time support and delivery coordination
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  receiverId: varchar("receiver_id").references(() => users.id), // Null if broadcast or role-based
+  orderId: varchar("order_id").references(() => orders.id),
+  role: varchar("role", { length: 50 }), // target role (e.g., "admin")
+  content: text("content").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
 // Relations
-export const loyaltyProgramRelations = relations(loyaltyProgram, ({ one }) => ({
-  user: one(users, {
-    fields: [loyaltyProgram.userId],
-    references: [users.id],
-  }),
-}));
-
-export const paymentRecordsRelations = relations(paymentRecords, ({ one }) => ({
-  order: one(orders, {
-    fields: [paymentRecords.orderId],
-    references: [orders.id],
-  }),
-  user: one(users, {
-    fields: [paymentRecords.userId],
-    references: [users.id],
-  }),
-}));
-
-export const eventsRelations = relations(events, ({ many }) => ({
-  products: many(products),
-}));
-
-export const inventoryAlertsRelations = relations(inventoryAlerts, ({ one }) => ({
-  product: one(products, {
-    fields: [inventoryAlerts.productId],
-    references: [products.id],
-  }),
-}));
-
-export const notificationLogRelations = relations(notificationLog, ({ one }) => ({
-  user: one(users, {
-    fields: [notificationLog.userId],
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
     references: [users.id],
   }),
   order: one(orders, {
-    fields: [notificationLog.orderId],
+    fields: [messages.orderId],
     references: [orders.id],
   }),
 }));
 
-export const ordersExtendedRelations = relations(ordersExtended, ({ one }) => ({
-  order: one(orders, {
-    fields: [ordersExtended.orderId],
-    references: [orders.id],
-  }),
-}));

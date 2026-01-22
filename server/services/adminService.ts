@@ -21,12 +21,18 @@ export async function getAllOrders(): Promise<(Order & { orderItems?: any[] })[]
   return storage.getAllOrders();
 }
 
+import { notifyOrderStatusChange } from "./notifications";
+
 export async function updateOrderStatus(orderId: string, status: string): Promise<Order | undefined> {
-  const validStatuses = ["pending", "confirmed", "assigned", "out_for_delivery", "delivered", "cancelled"];
+  const validStatuses = ["pending", "confirmed", "assigned", "out_for_delivery", "delivered", "completed", "cancelled"];
   if (!validStatuses.includes(status)) {
     throw new Error(`Invalid status. Must be one of: ${validStatuses.join(", ")}`);
   }
-  return storage.updateOrderStatus(orderId, status);
+  const order = await storage.updateOrderStatus(orderId, status);
+  if (order) {
+    await notifyOrderStatusChange(order.userId, order.id, status).catch(console.error);
+  }
+  return order;
 }
 
 export async function getAvailableDriversList(): Promise<any[]> {
