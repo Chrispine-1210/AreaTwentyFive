@@ -139,7 +139,7 @@ export function Header({ cartItemCount = 0, onCartClick }: HeaderProps) {
                 </Button>
               </Link>
 
-              <a href="/api/logout">
+              <a href="/">
                 <Button
                   variant="ghost"
                   size="icon"
